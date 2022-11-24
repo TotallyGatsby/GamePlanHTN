@@ -1,6 +1,6 @@
 import Context from "../context.js";
 import PrimitiveTask from "./primitiveTask.js";
-
+import * as SelectorTask from "./selectorTask.js";
 import * as SequenceTask from "./sequenceTask.js";
 
 class CompoundTask {
@@ -27,7 +27,11 @@ class CompoundTask {
 
     if (type === "sequence") {
       this._validityTest = SequenceTask.isValid;
+    } else if (type === "selector") {
+      this._validityTest = SelectorTask.isValid;
     }
+    // TODO: This would be a point to allow for extensibility to allow folks to provide
+    // their own 'isValid' function
   }
 
   isValid(context) {
