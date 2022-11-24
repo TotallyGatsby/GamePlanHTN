@@ -2,6 +2,7 @@ import { test } from "uvu";
 import * as assert from "uvu/assert";
 
 import CompoundTask from "../src/Tasks/compoundTask.js";
+import Context from "../src/context.js";
 
 const prim = {
   name: "foo",

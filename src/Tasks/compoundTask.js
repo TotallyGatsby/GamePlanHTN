@@ -4,7 +4,7 @@ import * as SelectorTask from "./selectorTask.js";
 import * as SequenceTask from "./sequenceTask.js";
 
 class CompoundTask {
-  constructor({ name, tasks, type }) {
+  constructor({ name, tasks, type, conditions }) {
     this.Conditions = [];
     this.Children = [];
 
@@ -25,6 +25,7 @@ class CompoundTask {
 
     this._validityTest = this.defaultValidityTest;
 
+    // For simple HTNs, we make sequence and selector default node types and wire everything up
     if (type === "sequence") {
       this._validityTest = SequenceTask.isValid;
     } else if (type === "selector") {
@@ -32,6 +33,11 @@ class CompoundTask {
     }
     // TODO: This would be a point to allow for extensibility to allow folks to provide
     // their own 'isValid' function
+
+    // Set the conditions array
+    if (conditions instanceof Array) {
+      this.Conditions = conditions;
+    }
   }
 
   isValid(context) {
@@ -46,12 +52,14 @@ class CompoundTask {
     // Evaluate every condition for this task
     // If any return false, the condition for this task is not valid
     for (let index = 0; index < this.Conditions.length; index++) {
-      if (typeof (this.Conditions[index]) === "function") {
-        if (this.Conditions[index](context) === false) {
-          return false;
-        }
+      if (typeof (this.Conditions[index]) !== "function") {
+        return false;
+      }
+      if (this.Conditions[index](context) === false) {
+        return false;
       }
     }
+
 
     return true;
   }
