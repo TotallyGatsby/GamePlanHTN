@@ -1,5 +1,5 @@
 const isValid = (context, task) => {
-  if (task.defaultValidityTest() === false) {
+  if (task.defaultValidityTest(context) === false) {
     return false;
   }
 

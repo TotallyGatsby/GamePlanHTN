@@ -19,7 +19,8 @@ class PrimitiveTask {
 
   isValid(context) {
     if (context === undefined || !(context instanceof Context) || context.Initialized === false) {
-      console.warn("Context is not initialized!");
+      console.warn("Context is not initialized for primitive task!");
+
       return false;
     }
 

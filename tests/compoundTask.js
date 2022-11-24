@@ -59,4 +59,27 @@ test("Create a compound task with only one anonymous primitive task", () => {
   assert.is(task.Children[0].Name, "");
 });
 
+const compound3 = {
+  name: "Compound with conditions",
+  type: "sequence",
+  conditions: [() => true],
+  effects: [],
+  tasks: () => {
+    console.log("test");
+  },
+};
+
+test("Create a compound task with one valid condition", () => {
+  const task = new CompoundTask(compound3);
+  const ctx = new Context();
+
+  ctx.init();
+
+  assert.is(task.Name, "Compound with conditions");
+  assert.is(task.Type, "sequence");
+  assert.is(task.Conditions.length, 1);
+  assert.is(task.Children[0].Name, "");
+  assert.is(task.isValid(ctx), true);
+});
+
 test.run();

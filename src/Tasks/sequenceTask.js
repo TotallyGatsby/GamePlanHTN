@@ -1,5 +1,6 @@
 const isValid = (context, task) => {
-  if (task.defaultValidityTest() === false) {
+  if (task.defaultValidityTest(context) === false) {
+    console.log("Base isValid failed");
     return false;
   }
 

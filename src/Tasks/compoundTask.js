@@ -41,7 +41,7 @@ class CompoundTask {
   }
 
   isValid(context) {
-    this._validityTest(context, this);
+    return this._validityTest(context, this);
   }
 
   defaultValidityTest(context) {
@@ -59,7 +59,6 @@ class CompoundTask {
         return false;
       }
     }
-
 
     return true;
   }
