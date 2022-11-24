@@ -82,4 +82,27 @@ test("Create a compound task with one valid condition", () => {
   assert.is(task.isValid(ctx), true);
 });
 
+const compound4 = {
+  name: "Compound with conditions",
+  type: "select",
+  conditions: [() => true],
+  effects: [],
+  tasks: () => {
+    console.log("test");
+  },
+};
+
+test("Create a compound task with one valid condition", () => {
+  const task = new CompoundTask(compound4);
+  const ctx = new Context();
+
+  ctx.init();
+
+  assert.is(task.Name, "Compound with conditions");
+  assert.is(task.Type, "select");
+  assert.is(task.Conditions.length, 1);
+  assert.is(task.Children[0].Name, "");
+  assert.is(task.isValid(ctx), true);
+});
+
 test.run();
