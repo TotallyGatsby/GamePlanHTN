@@ -7,10 +7,10 @@ class PrimitiveTask {
     this.Effects = [];
 
     if (typeof (props) === "function") {
-      this.Operator = props;
+      this.operator = props;
     } else {
       this.Name = props.name;
-      this.Operator = props.operator;
+      this.operator = props.operator;
       if (props.conditions instanceof Array) {
         this.Conditions = props.conditions;
       }

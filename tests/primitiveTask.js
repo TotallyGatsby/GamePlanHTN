@@ -21,14 +21,14 @@ test("Create simple primitive task", () => {
   const task = new PrimitiveTask(prim);
 
   assert.is(task.Name, "foo");
-  assert.type(task.Operator, "function");
+  assert.type(task.operator, "function");
 });
 
 test("Create simple functional primitive task ", () => {
   const task = new PrimitiveTask(prim2);
 
   assert.is(task.Name, "");
-  assert.type(task.Operator, "function");
+  assert.type(task.operator, "function");
 });
 
 
@@ -38,7 +38,7 @@ test("Create simple anonymous primitive task ", () => {
   });
 
   assert.is(task.Name, "");
-  assert.type(task.Operator, "function");
+  assert.type(task.operator, "function");
 });
 
 const primPrecon1 = {

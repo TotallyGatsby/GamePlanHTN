@@ -69,7 +69,7 @@ class Planner {
 
     if (this._currentTask) {
       if (this._currentTask instanceof PrimitiveTask) {
-        if (this._currentTask.Operator) {
+        if (this._currentTask.operator) {
           if (!this._currentTask.isValid(context)) {
             // TODO: for CurrentTaskExecutingConditionFailed
 
@@ -79,7 +79,7 @@ class Planner {
             return;
           }
 
-          const lastStatus = this._currentTask.Operator(context);
+          const lastStatus = this._currentTask.operator(context);
 
           if (lastStatus === TaskStatus.Success) {
             // TODO: Callback for CurrentTaskCompletedSuccessfully
