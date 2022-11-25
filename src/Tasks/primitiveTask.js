@@ -38,6 +38,10 @@ class PrimitiveTask {
 
     return true;
   }
+
+  stop(context) {
+    // TODO: Do something on stop?
+  }
 }
 
 export default PrimitiveTask;

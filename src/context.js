@@ -6,6 +6,8 @@ class Context {
     this.isDone = false;
     // TODO: Should this be a map?
     this.WorldState = {};
+    this.LastMTR = [];
+    this.MTR = [];
   }
 
   init() {

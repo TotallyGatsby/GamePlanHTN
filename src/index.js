@@ -1,4 +1,9 @@
 import Domain from "./domain.js";
+import Context from "./context.js";
+import Planner from "./planner.js";
 
-
-console.log("done!");
+export default {
+  Domain,
+  Context,
+  Planner,
+};
