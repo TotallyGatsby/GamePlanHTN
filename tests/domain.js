@@ -1,4 +1,5 @@
 import { test } from "uvu";
+import Context from "../src/context.js";
 import Domain from "../src/domain.js";
 import TaskStatus from "../src/taskStatus.js";
 
@@ -177,5 +178,12 @@ test("Create a Domain successfully", () => {
   new Domain(example1);
 });
 
+test("Attempt to plan a domain successfully", () => {
+  const testDomain = new Domain(example1);
+  const context = new Context();
+
+  context.init();
+  testDomain.findPlan(context);
+});
 
 test.run();

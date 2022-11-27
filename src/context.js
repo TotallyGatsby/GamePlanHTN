@@ -8,6 +8,7 @@ class Context {
     this.WorldState = {};
     this.LastMTR = [];
     this.MTR = [];
+    this.WorldStateChangeStack = [];
   }
 
   init() {

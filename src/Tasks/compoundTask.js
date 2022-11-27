@@ -1,4 +1,5 @@
 import Context from "../context.js";
+import DecompositionStatus from "../decompositionStatus.js";
 import PrimitiveTask from "./primitiveTask.js";
 import * as SelectorTask from "./selectorTask.js";
 import * as SequenceTask from "./sequenceTask.js";
@@ -13,7 +14,9 @@ class CompoundTask {
 
     if (Array.isArray(tasks)) {
       tasks.forEach((task) => {
-        if (typeof (task) === "function" || task.operator) {
+        if (task instanceof PrimitiveTask || task instanceof CompoundTask) {
+          this.Children.push(task);
+        } else if (typeof (task) === "function" || task.operator) {
           this.Children.push(new PrimitiveTask(task));
         } else {
           this.Children.push(new CompoundTask(task));
@@ -30,6 +33,7 @@ class CompoundTask {
       this._validityTest = SequenceTask.isValid;
     } else if (type === "selector") {
       this._validityTest = SelectorTask.isValid;
+      this._decompose = SelectorTask.decompose;
     }
     // TODO: This would be a point to allow for extensibility to allow folks to provide
     // their own 'isValid' function
@@ -61,6 +65,14 @@ class CompoundTask {
     }
 
     return true;
+  }
+
+  _decompose() {
+    return DecompositionStatus.Rejected;
+  }
+
+  decompose(context, startIndex, result) {
+    this._decompose(context, startIndex, result, this);
   }
 }
 

@@ -52,7 +52,7 @@ const primPrecon1 = {
   },
 };
 
-test("Test a failed precondition ", () => {
+test("Test a failed precondition (uninitialized context)", () => {
   const task = new PrimitiveTask(primPrecon1);
 
   assert.is(task.isValid(new Context()), false);
