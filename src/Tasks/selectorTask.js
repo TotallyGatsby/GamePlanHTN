@@ -1,3 +1,4 @@
+import log from "loglevel";
 import DecompositionStatus from "../decompositionStatus.js";
 import CompoundTask from "./compoundTask.js";
 import PrimitiveTask from "./primitiveTask.js";
@@ -16,6 +17,7 @@ const isValid = (context, task) => {
 };
 
 const beatsLastMTR = (context, taskIndex, currentDecompositionIndex) => {
+  log.debug("Evaluating whether task beats previous MTR");
   // If the last plan's traversal record for this decomposition layer
   // has a smaller index than the current task index we're about to
   // decompose, then the new decomposition can't possibly beat the
@@ -41,6 +43,7 @@ const beatsLastMTR = (context, taskIndex, currentDecompositionIndex) => {
   return true;
 };
 
+// eslint-disable-next-line max-params -- TODO: Refactor params
 const onDecomposeCompoundTask = (context, task, taskIndex, result, plan) => {
   // We need to record the task index before we decompose the task,
   // so that the traversal record is set up in the right order.
@@ -66,15 +69,17 @@ const onDecomposeCompoundTask = (context, task, taskIndex, result, plan) => {
     return DecompositionStatus.Failed;
   }
 
+  // If we successfully decomposed our subtask, add the resulting plan to this plan
   plan.concat(subPlan);
 
   result = plan;
-  const s = result.length === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
 
-  return s;
+  return (result.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
 };
 
+// eslint-disable-next-line max-params -- TODO: Refactor params
 const onDecomposeTask = (context, task, taskIndex, result, plan) => {
+  // If the task we're evaluating is invalid, return the existing plan as the result
   if (!task.isValid(context)) {
     result = plan;
 

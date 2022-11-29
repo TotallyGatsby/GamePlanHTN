@@ -1,4 +1,5 @@
 import { test } from "uvu";
+import log from "loglevel";
 import * as assert from "uvu/assert";
 
 import PrimitiveTask from "../src/Tasks/primitiveTask.js";
@@ -9,12 +10,12 @@ const prim = {
   conditions: [],
   effects: [],
   operator: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 
 const prim2 = () => {
-  console.log("primitive 2");
+  log.info("primitive 2");
 };
 
 test("Create simple primitive task", () => {
@@ -34,7 +35,7 @@ test("Create simple functional primitive task ", () => {
 
 test("Create simple anonymous primitive task ", () => {
   const task = new PrimitiveTask(() => {
-    console.log("three");
+    log.info("three");
   });
 
   assert.is(task.Name, "");
@@ -44,11 +45,11 @@ test("Create simple anonymous primitive task ", () => {
 const primPrecon1 = {
   name: "Precondition Fail",
   conditions: [
-    (context, task) => false,
+    () => false,
   ],
   effects: [],
   operator: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 
@@ -61,11 +62,11 @@ test("Test a failed precondition (uninitialized context)", () => {
 const primPrecon2 = {
   name: "Precondition Pass",
   conditions: [
-    (context, task) => true,
+    () => true,
   ],
   effects: [],
   operator: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 

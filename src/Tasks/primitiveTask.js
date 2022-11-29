@@ -1,3 +1,4 @@
+import log from "loglevel";
 import Context from "../context.js";
 import Effect from "../effect.js";
 
@@ -33,7 +34,7 @@ class PrimitiveTask {
 
   isValid(context) {
     if (context === undefined || !(context instanceof Context) || context.Initialized === false) {
-      console.warn("Context is not initialized for primitive task!");
+      log.warn("Context is not initialized for primitive task!");
 
       return false;
     }
@@ -59,7 +60,7 @@ class PrimitiveTask {
     });
   }
 
-  stop(context) {
+  stop() {
     // TODO: Do something on stop?
   }
 }

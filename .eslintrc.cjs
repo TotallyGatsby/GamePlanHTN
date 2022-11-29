@@ -4,6 +4,7 @@ module.exports = {
     "plugin:eslint-comments/recommended",
   ],
 
+  ignorePatterns: ["coverage/*"],
   parser: "@babel/eslint-parser",
 
   parserOptions: {
@@ -16,9 +17,7 @@ module.exports = {
     es6: true,
   },
 
-  plugins: [
-    "jest",
-  ],
+  plugins: [],
 
   reportUnusedDisableDirectives: true,
 

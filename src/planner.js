@@ -16,7 +16,7 @@ class Planner {
     // TODO: This should probably be an object with an 'error' property
     let decompositionStatus = "failure";
     let isReplacingAPlan = false;
-    let newPlan = [];
+    const newPlan = [];
 
     // If the context is dirty or we haven't started, start a new plan
     if (context.IsDirty || (this._currentTask === undefined && this._plan.length === 0)) {

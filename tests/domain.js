@@ -1,7 +1,10 @@
 import { test } from "uvu";
+import log from "loglevel";
 import Context from "../src/context.js";
 import Domain from "../src/domain.js";
 import TaskStatus from "../src/taskStatus.js";
+
+log.enableAll();
 
 const example1 = {
   name: "Get A, B, then C",
@@ -19,7 +22,7 @@ const example1 = {
             (context) => !context.hasState("HasC"),
           ],
           operator: () => {
-            console.log("Get C");
+            log.info("Get C");
 
             return TaskStatus.Success;
           },
@@ -43,7 +46,7 @@ const example1 = {
           operator:
             // Get A
             () => {
-              console.log("Get A");
+              log.info("Get A");
 
               return TaskStatus.Success;
             },
@@ -56,7 +59,7 @@ const example1 = {
           operator:
             // Get A
             () => {
-              console.log("Get B");
+              log.info("Get B");
 
               return TaskStatus.Success;
             },
@@ -74,7 +77,7 @@ const example1 = {
         {
           name: "Done",
           operator: (context) => {
-            console.log("Done");
+            log.info("Done");
             context.setDone();
 
             return TaskStatus.Continue;
@@ -95,6 +98,7 @@ const example1 = {
 };
 
 // This style is planned but not supported yet
+/*
 let example2 = {
   name: "Get A, B, then C",
   tasks: [
@@ -172,7 +176,7 @@ let example2 = {
     hasC: (context) => context.setState("HasC"),
   },
 };
-
+*/
 
 test("Create a Domain successfully", () => {
   new Domain(example1);
@@ -187,7 +191,7 @@ test("Attempt to plan a domain successfully", () => {
 
   testDomain.findPlan(context, plan);
 
-  console.log(JSON.stringify(plan));
+  log.info(JSON.stringify(plan));
 });
 
 test.run();

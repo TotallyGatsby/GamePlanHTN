@@ -1,3 +1,4 @@
+import log from "loglevel";
 import Context from "../context.js";
 import DecompositionStatus from "../decompositionStatus.js";
 import PrimitiveTask from "./primitiveTask.js";
@@ -68,7 +69,7 @@ class CompoundTask {
   }
 
   _decompose() {
-    console.log(`Compound task of ${this.Type} type (no decompose method) was decomposed! Task: ${this.Name}`);
+    log.warn(`Compound task of ${this.Type} type (no decompose method) was decomposed! Task: ${this.Name}`);
 
     return DecompositionStatus.Rejected;
   }

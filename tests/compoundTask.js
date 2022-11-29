@@ -1,4 +1,5 @@
 import { test } from "uvu";
+import log from "loglevel";
 import * as assert from "uvu/assert";
 
 import CompoundTask from "../src/Tasks/compoundTask.js";
@@ -9,12 +10,12 @@ const prim = {
   conditions: [],
   effects: [],
   operator: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 
 const prim2 = () => {
-  console.log("primitive 2");
+  log.info("primitive 2");
 };
 
 const compound = {
@@ -25,7 +26,7 @@ const compound = {
   tasks: [
     prim,
     () => {
-      console.log("test");
+      log.info("test");
     },
     prim2,
   ],
@@ -46,7 +47,7 @@ const compound2 = {
   conditions: [],
   effects: [],
   tasks: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 
@@ -65,7 +66,7 @@ const compound3 = {
   conditions: [() => true],
   effects: [],
   tasks: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 
@@ -88,7 +89,7 @@ const compound4 = {
   conditions: [() => true],
   effects: [],
   tasks: () => {
-    console.log("test");
+    log.info("test");
   },
 };
 

@@ -6,7 +6,7 @@ import DecompositionStatus from "./decompositionStatus.js";
 class Domain {
   // TODO: Handle actions, conditions, and effects via name lookup as separate objects
   // (see domain test for example)
-  constructor({ name, tasks, actions, conditions, effects }) {
+  constructor({ name, tasks }) {
     this.Name = name;
     this.Tasks = [];
 
