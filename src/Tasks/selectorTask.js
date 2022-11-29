@@ -22,7 +22,7 @@ const beatsLastMTR = (context, taskIndex, currentDecompositionIndex) => {
   // running plan, so we cancel finding a new plan.
   if (context.LastMTR[currentDecompositionIndex] < taskIndex) {
     // But, if any of the earlier records beat the record in LastMTR, we're still good, as we're on a higher priority branch.
-    // This ensures that [0,0,1] can beat [0,1,0]
+    // This ensures that a plan of [0,0,1] can beat [0,1,0], as earlier tasks have priority
     for (let i = 0; i < context.MTR.length; i++) {
       const diff = context.MTR[i] - context.LastMTR[i];
 
@@ -100,23 +100,26 @@ const decompose = (context, startIndex, result, task) => {
 
   for (let index = startIndex; index < task.Children.length; index++) {
     // When we plan, we need to improve upon the previous MTR
-    if (context.LastMTR && context.LastMTR.length > 0) {
-      if (context.MTR.length < context.LastMTR.length) {
-        const currentDecompositionIndex = context.MTR.length;
+    if (context.LastMTR.length > 0 && context.MTR.length < context.LastMTR.length) {
+      // If our current plan is shorter than our previous plan, check to make sure it's an actual
+      // improvement. (Longer plans are not an improvement)
+      if (!beatsLastMTR(context, index, context.MTR.length)) {
+        context.MTR.push(-1);
+        result = [];
 
-        if (!beatsLastMTR(context, index, currentDecompositionIndex)) {
-          context.MTR.push(-1);
-          result = [];
-
-          return DecompositionStatus.Rejected;
-        }
+        // Rejected plans tell the planner to look no further and stop planning entirely
+        return DecompositionStatus.Rejected;
       }
     }
 
-    const currentTask = task.Children[index];
+    const childTask = task.Children[index];
 
-    const status = onDecomposeTask(context, currentTask, index, result, plan);
+    // Note: result and plan will be mutated by this function
+    // TODO: To make this simpler to understand should these functions return an object that contains
+    // a status and the plan?
+    const status = onDecomposeTask(context, childTask, index, result, plan);
 
+    // If we cannot make a plan OR if we completed a plan, short circuit this for loop
     if (status === DecompositionStatus.Rejected || status === DecompositionStatus.Succeeded) {
       return status;
     }

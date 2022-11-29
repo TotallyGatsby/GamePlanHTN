@@ -183,7 +183,11 @@ test("Attempt to plan a domain successfully", () => {
   const context = new Context();
 
   context.init();
-  testDomain.findPlan(context);
+  const plan = [];
+
+  testDomain.findPlan(context, plan);
+
+  console.log(JSON.stringify(plan));
 });
 
 test.run();

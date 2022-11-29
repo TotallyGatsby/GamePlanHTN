@@ -42,7 +42,7 @@ class Domain {
 
     context.MTR = [];
 
-    status = this.Root.decompose(context, 0, plan);
+    status = this.Root.decompose(context, 0, /* out */ plan);
 
     // If this MTR equals the last MTR, then we need to double check whether we ended up
     // just finding the exact same plan. During decomposition each compound task can't check

@@ -69,6 +69,7 @@ class CompoundTask {
 
   _decompose() {
     console.log(`Compound task of ${this.Type} type (no decompose method) was decomposed! Task: ${this.Name}`);
+
     return DecompositionStatus.Rejected;
   }
 
