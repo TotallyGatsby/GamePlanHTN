@@ -75,7 +75,7 @@ class CompoundTask {
   }
 
   decompose(context, startIndex, result) {
-    this._decompose(context, startIndex, result, this);
+    return this._decompose(context, startIndex, result, this);
   }
 }
 

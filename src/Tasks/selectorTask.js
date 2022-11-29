@@ -45,6 +45,7 @@ const beatsLastMTR = (context, taskIndex, currentDecompositionIndex) => {
 
 // eslint-disable-next-line max-params -- TODO: Refactor params
 const onDecomposeCompoundTask = (context, task, taskIndex, result, plan) => {
+  log.debug(`Decomposing Compound Child Task: ${task.Name}`);
   // We need to record the task index before we decompose the task,
   // so that the traversal record is set up in the right order.
   context.MTR.push(taskIndex);
@@ -101,6 +102,7 @@ const onDecomposeTask = (context, task, taskIndex, result, plan) => {
 
 // For a selector task, only one child needs to successfully decompose
 const decompose = (context, startIndex, result, task) => {
+  log.debug(`Decomposing Task: ${task.Name}`);
   const plan = [];
 
   for (let index = startIndex; index < task.Children.length; index++) {

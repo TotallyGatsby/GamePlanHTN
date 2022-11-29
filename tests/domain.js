@@ -189,8 +189,9 @@ test("Attempt to plan a domain successfully", () => {
   context.init();
   const plan = [];
 
-  testDomain.findPlan(context, plan);
+  const status = testDomain.findPlan(context, plan);
 
+  log.info(status);
   log.info(JSON.stringify(plan));
 });
 

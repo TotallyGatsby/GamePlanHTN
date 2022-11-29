@@ -1,3 +1,4 @@
+import log from "loglevel";
 import Context from "./context.js";
 import CompoundTask from "./Tasks/compoundTask.js";
 import PrimitiveTask from "./Tasks/primitiveTask.js";
@@ -34,6 +35,7 @@ class Domain {
       throw new Error("Context has not been initialized");
     }
 
+    log.debug(`Finding plan for domain: ${this.Name}`);
     // The context is now in planning
     context.IsExecuting = false;
 
@@ -44,6 +46,7 @@ class Domain {
 
     status = this.Root.decompose(context, 0, /* out */ plan);
 
+    log.debug(`Status from Decomposing Root: ${status}`);
     // If this MTR equals the last MTR, then we need to double check whether we ended up
     // just finding the exact same plan. During decomposition each compound task can't check
     // for equality, only for less than, so this case needs to be treated after the fact.
@@ -91,7 +94,7 @@ class Domain {
     // The context is no longer in planning
     context.IsExecuting = true;
 
-    return true;
+    return status;
   }
 }
 
