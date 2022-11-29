@@ -4,7 +4,8 @@ import PrimitiveTask from "./Tasks/primitiveTask.js";
 import DecompositionStatus from "./decompositionStatus.js";
 
 class Domain {
-  // TODO: Handle actions, conditions, and effects as separate objects (see domain test for example)
+  // TODO: Handle actions, conditions, and effects via name lookup as separate objects
+  // (see domain test for example)
   constructor({ name, tasks, actions, conditions, effects }) {
     this.Name = name;
     this.Tasks = [];
@@ -17,9 +18,12 @@ class Domain {
       }
     });
 
-    this.Root = new CompoundTask({ name: "Root", tasks, type: "selector" });
+    // Our root node is a simple 'selector' task across our list of available tasks
+    // So planning is essentially decomposing our entire set of tasks
+    this.Root = new CompoundTask({ name: "Root", tasks, type: "select" });
   }
 
+  // TODO: Refactor into smaller methods
   // eslint-disable-next-line max-statements -- Cleanup later
   findPlan(context, plan) {
     if (!(context instanceof Context)) {

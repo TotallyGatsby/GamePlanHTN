@@ -1,4 +1,5 @@
 import Context from "../context.js";
+import Effect from "../effect.js";
 
 class PrimitiveTask {
   constructor(props) {
@@ -6,13 +7,26 @@ class PrimitiveTask {
     this.Conditions = [];
     this.Effects = [];
 
+    // Process the operation, which can be either a raw function or an object containing an
+    // operator field
     if (typeof (props) === "function") {
       this.operator = props;
     } else {
+      // Complex objects have a number of things we need to pull from the object passed in
       this.Name = props.name;
       this.operator = props.operator;
+
+      // Conditions are simple functions that return true/false depending on the world state
       if (props.conditions instanceof Array) {
         this.Conditions = props.conditions;
+      }
+
+      // Effects are more complex object than conditions, and can either be simple functions
+      // or objects. The Effect class handles disambiguating this for us.
+      if (props.effects instanceof Array) {
+        props.effects?.forEach((effect) => {
+          this.Effects.push(new Effect(effect));
+        });
       }
     }
   }
@@ -37,6 +51,12 @@ class PrimitiveTask {
     }
 
     return true;
+  }
+
+  applyEffects(context) {
+    this.Effects.forEach((effect) => {
+      effect.apply(context);
+    });
   }
 
   stop(context) {

@@ -99,7 +99,7 @@ const decompose = (context, startIndex, result, task) => {
   const plan = [];
 
   for (let index = startIndex; index < task.Children.length; index++) {
-    // If we want to plan, we need to improve upon the previous MTR
+    // When we plan, we need to improve upon the previous MTR
     if (context.LastMTR && context.LastMTR.length > 0) {
       if (context.MTR.length < context.LastMTR.length) {
         const currentDecompositionIndex = context.MTR.length;

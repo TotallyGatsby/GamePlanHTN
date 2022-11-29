@@ -15,7 +15,7 @@ class Context {
     this.Initialized = true;
   }
 
-  hasState(key, value) {
+  hasState(key, value = 1) {
     if (this.WorldState.hasOwnProperty(key) && this.WorldState[key] === value) {
       return true;
     }
@@ -32,7 +32,7 @@ class Context {
     return undefined;
   }
 
-  setState(key, value, dirtyContext = true) {
+  setState(key, value = 1, dirtyContext = true) {
     if (this.IsExecuting) {
       if (this.WorldState[key] === value) {
         return;
