@@ -32,6 +32,7 @@ class CompoundTask {
     // For simple HTNs, we make sequence and selector default node types and wire everything up
     if (type === "sequence") {
       this._validityTest = SequenceTask.isValid;
+      this._decompose = SelectorTask.decompose;
     } else if (type === "select") {
       this._validityTest = SelectorTask.isValid;
       this._decompose = SelectorTask.decompose;

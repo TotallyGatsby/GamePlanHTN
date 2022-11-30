@@ -1,3 +1,5 @@
+import log from "loglevel";
+
 class Context {
   constructor() {
     this.Initialized = false;
@@ -49,6 +51,10 @@ class Context {
 
   setDone() {
     this.isDone = true;
+  }
+
+  trimForExecution() {
+    log.debug("Not implemented");
   }
 }
 
