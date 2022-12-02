@@ -53,6 +53,7 @@ class Domain {
     let isMTRsEqual = context.MTR.length === context.LastMTR.length;
 
     if (isMTRsEqual) {
+      log.debug(`Evaluating LastMTR vs result, as they are the same size.`);
       for (let i = 0; i < context.MTR.length; i++) {
         if (context.MTR[i] < context.LastMTR[i]) {
           isMTRsEqual = false;
@@ -61,6 +62,7 @@ class Domain {
       }
 
       if (isMTRsEqual) {
+        log.debug(`Rejecting plan, MTR is the same as last MTR.`);
         plan = [];
         status = DecompositionStatus.Rejected;
       }

@@ -88,8 +88,11 @@ const onDecomposeTask = (context, task, taskIndex, result, plan) => {
   }
 
   if (task instanceof CompoundTask) {
+    log.debug(`Decomposing child compound task: ${task.Name}`);
+
     return onDecomposeCompoundTask(context, task, taskIndex, result, plan);
   } else if (task instanceof PrimitiveTask) {
+    log.debug(`Adding primitive task to plan: ${task.Name}`);
     task.applyEffects(context);
     plan.push(task);
   }
@@ -126,6 +129,9 @@ const decompose = (context, startIndex, result, task) => {
     // a status and the plan?
     const status = onDecomposeTask(context, childTask, index, result, plan);
 
+    log.debug(`Resulting plan after decomposing ${childTask.Name}: ${JSON.stringify(result)}`);
+
+
     // If we cannot make a plan OR if we completed a plan, short circuit this for loop
     if (status === DecompositionStatus.Rejected || status === DecompositionStatus.Succeeded) {
       return status;
@@ -133,6 +139,8 @@ const decompose = (context, startIndex, result, task) => {
   }
 
   result = plan;
+
+  log.debug(`Resulting plan from ${task.Name}: ${JSON.stringify(result)}`);
 
   return result.Count === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
 };
