@@ -187,12 +187,11 @@ test("Attempt to plan a domain successfully", () => {
   const context = new Context();
 
   context.init();
-  const plan = [];
 
-  const status = testDomain.findPlan(context, plan);
+  const decompositionStatus = testDomain.findPlan(context);
 
-  log.info(status);
-  log.info(JSON.stringify(plan));
+  log.info(decompositionStatus.status);
+  log.info(JSON.stringify(decompositionStatus.plan));
 });
 
 test.run();

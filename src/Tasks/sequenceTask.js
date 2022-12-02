@@ -17,61 +17,53 @@ const isValid = (context, task) => {
 };
 
 // eslint-disable-next-line max-params -- TODO: Fix this
-const onDecomposeCompoundTask = (context, task, taskIndex, oldStackDepth, result, plan) => {
-  const subPlan = [];
-  var status = task.decompose(context, 0, subPlan);
+const onDecomposeCompoundTask = (context, childTask, taskIndex, oldStackDepth, plan) => {
+  const childResult = childTask.decompose(context, 0);
 
   // If result is null, that means the entire planning procedure should cancel.
-  if (status === DecompositionStatus.Rejected) {
-    plan = [];
+  if (childResult.status === DecompositionStatus.Rejected) {
     context.trimToStackDepth(oldStackDepth);
-    result = [];
 
-    return DecompositionStatus.Rejected;
+    return { plan: [], status: DecompositionStatus.Rejected };
   }
 
   // If the decomposition failed
-  if (status === DecompositionStatus.Failed) {
-    plan = [];
+  if (childResult.status === DecompositionStatus.Failed) {
     context.trimToStackDepth(oldStackDepth);
-    result = plan;
 
-    return DecompositionStatus.Failed;
+    return { plan: [], status: DecompositionStatus.Failed };
   }
 
-  plan.concat(subPlan);
-  result = plan;
-
-  return DecompositionStatus.Succeeded;
+  return { plan: plan.concat(childResult.plan), status: DecompositionStatus.Succeeded };
 };
 
 // eslint-disable-next-line max-params -- TODO: Fix this
-const onDecomposeTask = (context, task, taskIndex, oldStackDepth, result, plan) => {
-  if (!task.isValid(context)) {
-    plan = [];
+const onDecomposeTask = (context, childTask, taskIndex, oldStackDepth, plan) => {
+  if (!childTask.isValid(context)) {
     context.trimToStackDepth(oldStackDepth);
-    result = plan;
 
-    return DecompositionStatus.Failed;
+    return { plan: [], status: DecompositionStatus.Failed };
   }
 
-  if (task instanceof CompoundTask) {
-    return onDecomposeCompoundTask(context, task, taskIndex, oldStackDepth, result, plan);
-  } else if (task instanceof PrimitiveTask) {
-    log.debug(`Adding primitive task to plan: ${task.Name}`);
-    task.applyEffects(context);
-    plan.push(task);
+  if (childTask instanceof CompoundTask) {
+    return onDecomposeCompoundTask(context, childTask, taskIndex, oldStackDepth, plan);
+  } else if (childTask instanceof PrimitiveTask) {
+    log.debug(`Adding primitive task to plan: ${childTask.Name}`);
+    childTask.applyEffects(context);
+    plan.push(childTask);
   }
 
-  result = plan;
-
-  return (result.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
+  return { plan, status: (plan.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded };
 };
 
 // For a sequence task, all children need to successfully decompose
-const decompose = (context, startIndex, result, task) => {
+const decompose = (context, startIndex, task) => {
   log.debug(`Decomposing Task: ${task.Name} with start index: ${startIndex}`);
-  const plan = [];
+
+  let result = {
+    plan: [],
+    status: DecompositionStatus.Rejected,
+  };
 
   for (let index = startIndex; index < task.Children.length; index++) {
     const childTask = task.Children[index];
@@ -81,22 +73,20 @@ const decompose = (context, startIndex, result, task) => {
     // Note: result and plan will be mutated by this function
     // TODO: To make this simpler to understand should these functions return an object that contains
     // a status and the plan?
-    const status = onDecomposeTask(context, childTask, index, undefined, result, plan);
+    result = onDecomposeTask(context, childTask, index, undefined, result.plan);
 
     // If we cannot make a plan OR if any task failed, short circuit this for loop
-    if (status === DecompositionStatus.Rejected || status === DecompositionStatus.Failed) {
-      log.debug(`Child task of [${task.Name}] named [${childTask.Name}] failed to decompose with status: ${status}`);
+    if (result.status === DecompositionStatus.Rejected || result.status === DecompositionStatus.Failed) {
+      log.debug(`Child task of [${task.Name}] named [${childTask.Name}] failed to decompose with status: ${result.status}`);
 
-      return status;
+      return result;
     }
   }
 
-  result.length = 0;
-  result.push(...plan);
-
+  result.status = result.plan.length === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
   log.debug(`Resulting plan from ${task.Name}: ${JSON.stringify(result)}`);
 
-  return result.Count === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
+  return result;
 };
 
 export { isValid, decompose };

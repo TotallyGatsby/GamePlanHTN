@@ -41,7 +41,7 @@ class CompoundTask {
     // their own 'isValid' function
 
     // Set the conditions array
-    if (conditions instanceof Array) {
+    if (Array.isArray(conditions)) {
       this.Conditions = conditions;
     }
   }
@@ -75,8 +75,8 @@ class CompoundTask {
     return DecompositionStatus.Rejected;
   }
 
-  decompose(context, startIndex, result) {
-    return this._decompose(context, startIndex, result, this);
+  decompose(context, startIndex) {
+    return this._decompose(context, startIndex, this);
   }
 }
 

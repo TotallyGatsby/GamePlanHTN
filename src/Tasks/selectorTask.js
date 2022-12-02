@@ -43,70 +43,76 @@ const beatsLastMTR = (context, taskIndex, currentDecompositionIndex) => {
   return true;
 };
 
-// eslint-disable-next-line max-params -- TODO: Refactor params
-const onDecomposeCompoundTask = (context, task, taskIndex, result, plan) => {
-  log.debug(`Decomposing Compound Child Task: ${task.Name}`);
+const onDecomposeCompoundTask = (context, childTask, taskIndex, plan) => {
+  log.debug(`Decomposing Compound Child Task: ${childTask.Name}`);
   // We need to record the task index before we decompose the task,
   // so that the traversal record is set up in the right order.
   context.MTR.push(taskIndex);
 
-  const subPlan = [];
-  const status = task.decompose(context, 0, subPlan);
+  const childResult = childTask.decompose(context, 0);
 
+  log.debug(`Decomposing Compound Child Task Result: ${JSON.stringify(childResult)}`);
   // If status is rejected, that means the entire planning procedure should cancel.
-  if (status === DecompositionStatus.Rejected) {
-    result = [];
-
-    return DecompositionStatus.Rejected;
+  if (childResult.status === DecompositionStatus.Rejected) {
+    return {
+      plan: [],
+      status: DecompositionStatus.Rejected,
+    };
   }
 
   // If the decomposition failed return the existing plan
-  if (status === DecompositionStatus.Failed) {
+  if (childResult.status === DecompositionStatus.Failed) {
     // Remove the taskIndex if it failed to decompose.
     context.MTR.pop();
 
-    result = plan;
-
-    return DecompositionStatus.Failed;
+    return {
+      plan,
+      status: DecompositionStatus.Failed,
+    };
   }
+
+  log.debug(`Existing plan: ${JSON.stringify(plan)}`);
 
   // If we successfully decomposed our subtask, add the resulting plan to this plan
-  plan.concat(subPlan);
-
-  result = plan;
-
-  return (result.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
+  return {
+    plan: plan.concat(childResult.plan),
+    status: (plan.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded,
+  };
 };
 
-// eslint-disable-next-line max-params -- TODO: Refactor params
-const onDecomposeTask = (context, task, taskIndex, result, plan) => {
+const onDecomposeTask = (context, childTask, taskIndex, plan) => {
   // If the task we're evaluating is invalid, return the existing plan as the result
-  if (!task.isValid(context)) {
-    result = plan;
-
-    return DecompositionStatus.Failed;
+  if (!childTask.isValid(context)) {
+    return {
+      plan,
+      status: DecompositionStatus.Failed,
+    };
   }
 
-  if (task instanceof CompoundTask) {
-    log.debug(`Decomposing child compound task: ${task.Name}`);
+  if (childTask instanceof CompoundTask) {
+    log.debug(`Decomposing child compound task: ${childTask.Name}`);
 
-    return onDecomposeCompoundTask(context, task, taskIndex, result, plan);
-  } else if (task instanceof PrimitiveTask) {
-    log.debug(`Adding primitive task to plan: ${task.Name}`);
-    task.applyEffects(context);
-    plan.push(task);
+    return onDecomposeCompoundTask(context, childTask, taskIndex, plan);
+  } else if (childTask instanceof PrimitiveTask) {
+    log.debug(`Adding primitive task to plan: ${childTask.Name}`);
+    childTask.applyEffects(context);
+    plan.push(childTask);
   }
 
-  result = plan;
-  const status = result.length === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
-
-  return status;
+  return {
+    plan,
+    status: plan.length === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded,
+  };
 };
 
 // For a selector task, only one child needs to successfully decompose
-const decompose = (context, startIndex, result, task) => {
+const decompose = (context, startIndex, task) => {
   log.debug(`Decomposing Task: ${task.Name}`);
-  const plan = [];
+
+  let result = {
+    plan: [],
+    status: DecompositionStatus.Rejected,
+  };
 
   for (let index = startIndex; index < task.Children.length; index++) {
     // When we plan, we need to improve upon the previous MTR
@@ -115,10 +121,13 @@ const decompose = (context, startIndex, result, task) => {
       // improvement. (Longer plans are not an improvement)
       if (!beatsLastMTR(context, index, context.MTR.length)) {
         context.MTR.push(-1);
-        result = [];
+        result = {
+          plan: [],
+          status: DecompositionStatus.Rejected,
+        };
 
         // Rejected plans tell the planner to look no further and stop planning entirely
-        return DecompositionStatus.Rejected;
+        return result;
       }
     }
 
@@ -127,22 +136,22 @@ const decompose = (context, startIndex, result, task) => {
     // Note: result and plan will be mutated by this function
     // TODO: To make this simpler to understand should these functions return an object that contains
     // a status and the plan?
-    const status = onDecomposeTask(context, childTask, index, result, plan);
-
+    log.debug(`About to decompose ${(childTask.constructor.name)}: ${childTask.Name}: ${JSON.stringify(result)}`);
+    result = onDecomposeTask(context, childTask, index, result.plan);
     log.debug(`Resulting plan after decomposing ${childTask.Name}: ${JSON.stringify(result)}`);
 
 
     // If we cannot make a plan OR if we completed a plan, short circuit this for loop
-    if (status === DecompositionStatus.Rejected || status === DecompositionStatus.Succeeded) {
-      return status;
+    if (result.status === DecompositionStatus.Rejected || result.status === DecompositionStatus.Succeeded) {
+      return result;
     }
   }
 
-  result = plan;
-
   log.debug(`Resulting plan from ${task.Name}: ${JSON.stringify(result)}`);
 
-  return result.Count === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
+  result.status = result.plan.length === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
+
+  return result;
 };
 
 export { isValid, decompose };

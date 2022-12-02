@@ -18,13 +18,13 @@ class PrimitiveTask {
       this.operator = props.operator;
 
       // Conditions are simple functions that return true/false depending on the world state
-      if (props.conditions instanceof Array) {
+      if (Array.isArray(props.conditions)) {
         this.Conditions = props.conditions;
       }
 
       // Effects are more complex object than conditions, and can either be simple functions
       // or objects. The Effect class handles disambiguating this for us.
-      if (props.effects instanceof Array) {
+      if (Array.isArray(props.effects)) {
         props.effects?.forEach((effect) => {
           this.Effects.push(new Effect(effect));
         });

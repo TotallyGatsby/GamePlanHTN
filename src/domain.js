@@ -26,7 +26,7 @@ class Domain {
 
   // TODO: Refactor into smaller methods
   // eslint-disable-next-line max-statements -- Cleanup later
-  findPlan(context, plan) {
+  findPlan(context) {
     if (!(context instanceof Context)) {
       throw new TypeError(`Domain received non-context object: ${JSON.stringify(context)}`);
     }
@@ -39,14 +39,13 @@ class Domain {
     // The context is now in planning
     context.IsExecuting = false;
 
-    plan = [];
-    let status = DecompositionStatus.Rejected;
+    let result = { status: DecompositionStatus.Rejected, plan: [] };
 
     context.MTR = [];
 
-    status = this.Root.decompose(context, 0, /* out */ plan);
+    result = this.Root.decompose(context, 0);
 
-    log.debug(`Status from Decomposing Root: ${status}`);
+    log.debug(`Status from Decomposing Root: ${result.status}`);
     // If this MTR equals the last MTR, then we need to double check whether we ended up
     // just finding the exact same plan. During decomposition each compound task can't check
     // for equality, only for less than, so this case needs to be treated after the fact.
@@ -63,12 +62,14 @@ class Domain {
 
       if (isMTRsEqual) {
         log.debug(`Rejecting plan, MTR is the same as last MTR.`);
-        plan = [];
-        status = DecompositionStatus.Rejected;
+        result = {
+          plan: [],
+          status: DecompositionStatus.Rejected,
+        };
       }
     }
 
-    if (status === DecompositionStatus.Succeeded) {
+    if (result.status === DecompositionStatus.Succeeded) {
       // Trim away any plan-only or plan&execute effects from the world state change stack, that only
       // permanent effects on the world state remains now that the planning is done.
       context.trimForExecution();
@@ -96,7 +97,7 @@ class Domain {
     // The context is no longer in planning
     context.IsExecuting = true;
 
-    return status;
+    return result;
   }
 }
 
