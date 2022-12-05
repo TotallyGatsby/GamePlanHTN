@@ -18,6 +18,7 @@ const isValid = (context, task) => {
 
 // eslint-disable-next-line max-params -- TODO: Fix this
 const onDecomposeCompoundTask = (context, childTask, taskIndex, oldStackDepth, plan) => {
+  log.debug(`Decomposing compund task: ${JSON.stringify(plan)}`);
   const childResult = childTask.decompose(context, 0);
 
   // If result is null, that means the entire planning procedure should cancel.

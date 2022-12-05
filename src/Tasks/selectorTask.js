@@ -25,8 +25,8 @@ const beatsLastMTR = (context, taskIndex, currentDecompositionIndex) => {
   if (context.LastMTR[currentDecompositionIndex] < taskIndex) {
     // But, if any of the earlier records beat the record in LastMTR, we're still good, as we're on a higher priority branch.
     // This ensures that a plan of [0,0,1] can beat [0,1,0], as earlier tasks have priority
-    for (let i = 0; i < context.MTR.length; i++) {
-      const diff = context.MTR[i] - context.LastMTR[i];
+    for (let i = 0; i < context.MethodTraversalRecord.length; i++) {
+      const diff = context.MethodTraversalRecord[i] - context.LastMTR[i];
 
       if (diff < 0) {
         return true;
@@ -47,7 +47,7 @@ const onDecomposeCompoundTask = (context, childTask, taskIndex, plan) => {
   log.debug(`Decomposing Compound Child Task: ${childTask.Name}`);
   // We need to record the task index before we decompose the task,
   // so that the traversal record is set up in the right order.
-  context.MTR.push(taskIndex);
+  context.MethodTraversalRecord.push(taskIndex);
 
   const childResult = childTask.decompose(context, 0);
 
@@ -63,7 +63,7 @@ const onDecomposeCompoundTask = (context, childTask, taskIndex, plan) => {
   // If the decomposition failed return the existing plan
   if (childResult.status === DecompositionStatus.Failed) {
     // Remove the taskIndex if it failed to decompose.
-    context.MTR.pop();
+    context.MethodTraversalRecord.pop();
 
     return {
       plan,
@@ -120,7 +120,7 @@ const decompose = (context, startIndex, task) => {
       // If our current plan is shorter than our previous plan, check to make sure it's an actual
       // improvement. (Longer plans are not an improvement)
       if (!beatsLastMTR(context, index, context.MTR.length)) {
-        context.MTR.push(-1);
+        context.MethodTraversalRecord.push(-1);
         result = {
           plan: [],
           status: DecompositionStatus.Rejected,
