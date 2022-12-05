@@ -9,8 +9,11 @@ class Context {
     // TODO: Should this be a map?
     this.WorldState = {};
     this.LastMTR = [];
-    this.MTR = [];
+    this.MethodTraversalRecord = [];
     this.WorldStateChangeStack = [];
+    this.LastMTRDebug = [];
+    this.DebugMTR = false;
+    this.partialPlanQueue = [];
   }
 
   init() {
@@ -55,6 +58,44 @@ class Context {
 
   trimForExecution() {
     log.debug("Not implemented");
+  }
+
+  clarMTR() {
+    this.MethodTraversalRecord = [];
+  }
+
+  clearLastMTR() {
+    this.LastMTR = [];
+  }
+
+  shiftMTR() {
+    this.LastMTR = [];
+    this.LastMTR.push(...this.MethodTraversalRecord);
+  }
+
+  restoreMTR() {
+    this.MethodTraversalRecord = [];
+    this.MethodTraversalRecord.push(...this.LastMTR);
+    this.LastMTR = [];
+  }
+
+  clearLastMTRDebug() {
+    this.LastMTRDebug = [];
+  }
+
+  shiftMTRDebug() {
+    this.LastMTRDebug = [];
+    this.LastMTRDebug.push(...this.MTRDebug);
+  }
+
+  restoreMTRDebug() {
+    this.MTRDebug = [];
+    this.MTRDebug.push(...this.LastMTRDebug);
+    this.LastMTRDebug = [];
+  }
+
+  clearPartialPlanQueue() {
+    this.partialPlanQueue = [];
   }
 }
 

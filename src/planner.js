@@ -1,128 +1,339 @@
 import PrimitiveTask from "./Tasks/primitiveTask";
 import TaskStatus from "./taskStatus";
+import DecompositionStatus from "./decompositionStatus";
+import EffectType from "./effectType";
 
 class Planner {
   constructor() {
-    this._currentTask = undefined;
+    this._currentTask = null;
     this._plan = [];
   }
-  // Steps one 'frame' forward in planning.
-  // eslint-disable-next-line max-statements, complexity -- Refactor this into smaller methods!
-  tick(context, domain) {
-    if (!context || !context.Initialized) {
-      throw Error("Context not initialized prior to planning!");
+
+  // ========================================================= PROPERTIES
+
+  get lastStatus() {
+    return this._lastStatus;
+  }
+
+  set lastStatus(status) {
+    this._lastStatus = status;
+  }
+
+  // ========================================================= CALLBACKS
+
+  get onNewPlan() {
+    return this._onNewPlan;
+  }
+
+  set onNewPlan(callback) {
+    this._onNewPlan = callback;
+  }
+
+  get onReplacePlan() {
+    return this._onReplacePlan;
+  }
+
+  set onReplacePlan(callback) {
+    this._onReplacePlan = callback;
+  }
+
+  get onNewTask() {
+    return this._onNewTask;
+  }
+
+  set onNewTask(callback) {
+    this._onNewTask = callback;
+  }
+
+  get onNewTaskConditionFailed() {
+    return this._onNewTaskConditionFailed;
+  }
+
+  set onNewTaskConditionFailed(callback) {
+    this._onNewTaskConditionFailed = callback;
+  }
+
+  get onStopCurrentTask() {
+    return this._onStopCurrentTask;
+  }
+
+  set onStopCurrentTask(callback) {
+    this._onStopCurrentTask = callback;
+  }
+
+  get onCurrentTaskCompletedSuccessfully() {
+    return this._onCurrentTaskCompletedSuccessfully;
+  }
+
+  set onCurrentTaskCompletedSuccessfully(callback) {
+    this._onCurrentTaskCompletedSuccessfully = callback;
+  }
+
+  get onApplyEffect() {
+    return this._onApplyEffect;
+  }
+
+  set onApplyEffect(callback) {
+    this._onApplyEffect = callback;
+  }
+
+  get onCurrentTaskFailed() {
+    return this._onCurrentTaskFailed;
+  }
+
+  set onCurrentTaskFailed(callback) {
+    this._onCurrentTaskFailed = callback;
+  }
+
+  get onCurrentTaskContinues() {
+    return this._onCurrentTaskContinues;
+  }
+
+  set onCurrentTaskContinues(callback) {
+    this._onCurrentTaskContinues = callback;
+  }
+
+  get onCurrentTaskExecutingConditionFailed() {
+    return this._onCurrentTaskExecutingConditionFailed;
+  }
+
+  set onCurrentTaskExecutingConditionFailed(callback) {
+    this._onCurrentTaskExecutingConditionFailed = callback;
+  }
+
+  // eslint-disable-next-line max-statements, complexity -- This is how it is in FluidHTN
+  tick(domain, ctx, allowImmediateReplan = true) {
+    if (!ctx.IsInitialized) {
+      throw new Error("Context was not initialized!");
     }
 
-    // TODO: This should probably be an object with an 'error' property
-    let decompositionStatus = "failure";
-    let isReplacingAPlan = false;
-    const newPlan = [];
+    let decompositionStatus = DecompositionStatus.Failed;
+    let isTryingToReplacePlan = false;
 
-    // If the context is dirty or we haven't started, start a new plan
-    if (context.IsDirty || (this._currentTask === undefined && this._plan.length === 0)) {
-      context.IsDirty = false;
+    // Check whether state has changed or the current plan has finished running.
+    // and if so, try to find a new plan.
+    if ((this._currentTask === null && this._plan.length === 0) || ctx.IsDirty) {
+      let lastPartialPlanQueue = null;
 
-      decompositionStatus = domain.findPlan(context);
-      isReplacingAPlan = this._plan.length > 0;
+      const worldStateDirtyReplan = ctx.IsDirty;
 
-      // TODO: Replace decompositionStatus with something more elegant
-      if (decompositionStatus === "success") {
-        if (isReplacingAPlan || this._currentTask) {
-          // TODO: Invoke a callback for replacing a plan
-        } else if (!isReplacingAPlan) {
-          // TODO: Invoke a callback for creating a new plan
+      ctx.IsDirty = false;
+
+      if (worldStateDirtyReplan) {
+        // If we're simply re-evaluating whether to replace the current plan because
+        // some world state got dirt, then we do not intend to continue a partial plan
+        // right now, but rather see whether the world state changed to a degree where
+        // we should pursue a better plan. Thus, if this replan fails to find a better
+        // plan, we have to add back the partial plan temps cached above.
+        if (ctx.HasPausedPartialPlan) {
+          ctx.HasPausedPartialPlan = false;
+          // NOTE: Deviates from FluidHTN, JS uses arrays for queues
+          lastPartialPlanQueue = [];
+          while (ctx.PartialPlanQueue.length > 0) {
+            lastPartialPlanQueue.push(ctx.PartialPlanQueue.shift());
+          }
+
+          // We also need to ensure that the last mtr is up to date with the on-going MTR of the partial plan,
+          // so that any new potential plan that is decomposing from the domain root has to beat the currently
+          // running partial plan.
+          ctx.shiftMTR();
+
+          if (ctx.DebugMTR) {
+            ctx.shiftMTRDebug();
+          }
         }
-
-        // Copy over the plan entries to the planner
-        this._plan = [...newPlan];
-
-        if (this._currentTask && this._currentTask instanceof PrimitiveTask) {
-          // TODO: Invoke a callback for the current primitive task being stopped
-          this._currentTask.stop(context);
-          this._currentTask = undefined;
-        }
-
-        // Copy the current MTR into the Last MTR.
-        context.LastMTR = [...context.MTR];
       }
-    }
 
-    // If we're replacing a plan and have no in flight tasks...
-    if (this._currentTask && this._plan.length > 0) {
-      // Set the current task to the head of the plan
-      this._currentTask = this._plan.shift();
+      const result = domain.findPlan(ctx);
+
+      decompositionStatus = result.status;
+      const newPlan = result.plan;
+
+      isTryingToReplacePlan = this._plan.length > 0;
+      if (decompositionStatus === DecompositionStatus.Succeeded || decompositionStatus === DecompositionStatus.Partial) {
+        if (this.onReplacePlan && (this._plan.length > 0 || this._currentTask)) {
+          this.onReplacePlan(this._plan, this._currentTask, newPlan);
+        } else if (this.onNewPlan && this._plan.length === 0) {
+          this.onNewPlan(newPlan);
+        }
+        this._plan = [];
+
+        this._plan.push(...newPlan);
+
+        if (this._currentTask !== null && this._currentTask instanceof PrimitiveTask) {
+          if (this.onStopCurrentTask) {
+            this.onStopCurrentTask(this._currentTask);
+          }
+          this._currentTask.stop(ctx);
+          this._currentTask = null;
+        }
+
+        // Copy the MTR into our LastMTR to represent the current plan's decomposition record
+        // that must be beat to replace the plan.
+        if (ctx.MethodTraversalRecord !== null) {
+          ctx.shiftMTR();
+
+          if (ctx.DebugMTR) {
+            ctx.shiftMTRDebug();
+          }
+        }
+      } else if (lastPartialPlanQueue !== null) {
+        ctx.HasPausedPartialPlan = true;
+
+        ctx.clearPartialPlanQueue();
+        while (lastPartialPlanQueue.length > 0) {
+          ctx.partialPlanQueue.push(lastPartialPlanQueue.shift());
+        }
+
+        if (ctx.LastMTR.length > 0) {
+          ctx.restoreMTR();
+
+          if (ctx.DebugMTR) {
+            ctx.restoreMTRDebug();
+          }
+        }
+      }
+
+      if (this._currentTask === null && this._plan.length > 0) {
+        this._currentTask = this._plan.shift();
+        if (this._currentTask) {
+          if (this.onNewTask) {
+            this.onNewTask(this._currentTask);
+          }
+
+          // TODO: Double check that we're defining rich enough Conditions so that when we pass them through they are
+          // useful to our onNewTaskConditionFailed event
+          for (let i = 0; i < this._currentTask.Conditions.length; i++) {
+            // If a condition failed, then the plan failed to progress! A replan is required.
+            if (this._currentTask.Conditions[i](ctx) === false) {
+              if (this.onNewTaskConditionFailed) {
+                this.onNewTaskConditionFailed(this._currentTask, this._currentTask.Conditions[i]);
+              }
+              this._currentTask = null;
+              this._plan = [];
+              ctx.clearLastMTR();
+              if (ctx.DebugMTR) {
+                ctx.clearLastMTRDebug();
+              }
+              ctx.HasPausedPartialPlan = false;
+              ctx.clearPartialPlanQueue();
+              ctx.IsDirty = false;
+
+              return;
+            }
+          }
+        }
+      }
 
       if (this._currentTask) {
-        // TODO: Callback for a new task starting
+        if (this._currentTask instanceof PrimitiveTask) {
+          if (this._currentTask.Operator) {
+            this._currentTask.ExecutingConditions.forEach((condition) => {
+              // If a condition failed, then the plan failed to progress! A replan is required.
+              if (condition(ctx) === false) {
+                if (this.onCurrentTaskExecutingConditionFailed) {
+                  this.onCurrentTaskExecutingConditionFailed(this._currentTask, condition);
+                }
 
-        // If the task is no longer valid, we need to replan
-        if (!this._currentTask.isValid(context)) {
-          // TODO: Callback for a new task condition failure
+                this._currentTask = null;
+                this._plan = [];
 
-          // Clean up our plan
-          this.cleanPlan(context);
+                ctx.clearLastMTR();
+                if (ctx.DebugMTR) {
+                  ctx.clearLastMTRDebug();
+                }
+                ctx.HasPausedPartialPlan = false;
+                ctx.clearPartialPlanQueue();
+                ctx.IsDirty = false;
 
-          return;
-        }
-      }
-    }
+                return;
+              }
+            });
 
-    if (this._currentTask) {
-      if (this._currentTask instanceof PrimitiveTask) {
-        if (this._currentTask.operator) {
-          if (!this._currentTask.isValid(context)) {
-            // TODO: for CurrentTaskExecutingConditionFailed
+            this.lastStatus = this._currentTask.operator(ctx);
 
-            // Clean up our plan
-            this.cleanPlan(context);
+            // If the operation finished successfully, we set task to null so that we dequeue the next task in the plan the following tick.
+            if (this.lastStatus === TaskStatus.Success) {
+              if (this.onCurrentTaskCompletedSuccessfully) {
+                this.onCurrentTaskCompletedSuccessfully(this._currentTask);
+              }
 
-            return;
-          }
+              // All effects that is a result of running this task should be applied when the task is a success.
+              this._currentTask.Effects.forEach((effect) => {
+                if (effect.Type === EffectType.PlanAndExecute) {
+                  if (this.onApplyEffect) {
+                    this.onApplyEffect(effect);
+                  }
+                  effect.apply(ctx);
+                }
+              });
 
-          const lastStatus = this._currentTask.operator(context);
+              this._currentTask = null;
+              if (this._plan.length === 0) {
+                ctx.clearLastMTR();
 
-          if (lastStatus === TaskStatus.Success) {
-            // TODO: Callback for CurrentTaskCompletedSuccessfully
+                if (ctx.DebugMTR) {
+                  ctx.clearLastMTRDebug();
+                }
 
-            // TODO: Apply all effects of the task
+                ctx.IsDirty = false;
 
+                if (allowImmediateReplan) {
+                  this.tick(domain, ctx, false);
+                }
+              }
+            } else if (this.lastStatus === TaskStatus.Failure) {
+              // If the operation failed to finish, we need to fail the entire plan, so that we will replan the next tick.
+              if (this.onCurrentTaskFailed) {
+                this.onCurrentTaskFailed(this._currentTask);
+              }
 
-            // Clear our current task so we dequeue the next task on the next tick()
-            this._currentTask = undefined;
+              this._currentTask = null;
+              this._plan = [];
 
-            // If this was the last item in our plan, clean up
-            if (this._plan.length === 0) {
-              context.LastMTR = [];
-              context.IsDirty = false;
-              // TODO; This is where we could immediately replan if we wanted.
+              ctx.clearLastMTR();
+              if (ctx.DebugMTR) {
+                ctx.clearLastMTRDebug();
+              }
+
+              ctx.HasPausedPartialPlan = false;
+              ctx.clearPartialPlanQueue();
+              ctx.IsDirty = false;
+            } else if (this.onCurrentTaskContinues) {
+              // Otherwise the operation isn't done yet and need to continue.
+              this.onCurrentTaskContinues(this._currentTask);
             }
-          } else if (lastStatus === TaskStatus.Failure) {
-            // If the task failed, we need to replan
-            // TODO: Invoke Current Task Failed
-
-            // Clean up our plan
-            this.cleanPlan(context);
           } else {
-            // Our current task is in progress, continue
-            // TODO: invoke an onContinueTask item here
+            // This should not really happen if a domain is set up properly.
+            this._currentTask = null;
+            this.lastStatus = TaskStatus.Failure;
           }
-        } else {
-          // If we get here, there's a bug in the Domain or the library -- the planner should never
-          // encounter a CompoundTask at this point
-          throw new Error(`Invalid domain, received a compound task in planner: ${JSON.stringify(this._currentTask)}`);
+        }
+
+        if (this._currentTask === null && this._plan.length === 0 && isTryingToReplacePlan === false &&
+          (decompositionStatus === DecompositionStatus.Failed ||
+            decompositionStatus === DecompositionStatus.Rejected)) {
+          this.lastStatus = TaskStatus.Failure;
         }
       }
     }
-
-    // TODO: Fluid HTN has an additional fall through check here if things break catastrophically
   }
 
-  cleanPlan(context) {
-    // Clean up our plan
-    this._currentTask = undefined;
+  reset(ctx) {
     this._plan = [];
-    context.LastMTR = [];
-    context.IsDirty = false;
+
+    if (this._currentTask !== null && this._currentTask instanceof PrimitiveTask) {
+      this._currentTask.stop(ctx);
+    }
+    this._currentTask = null;
+  }
+
+  getPlan() {
+    return this._plan;
+  }
+
+  getCurrentTask() {
+    return this._currentTask;
   }
 }
 export default Planner;

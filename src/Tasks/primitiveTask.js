@@ -30,6 +30,8 @@ class PrimitiveTask {
         });
       }
     }
+
+    this.ExecutingConditions = [];
   }
 
   isValid(context) {

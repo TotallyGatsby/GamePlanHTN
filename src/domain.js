@@ -41,7 +41,7 @@ class Domain {
 
     let result = { status: DecompositionStatus.Rejected, plan: [] };
 
-    context.MTR = [];
+    context.MethodTraversalRecord = [];
 
     result = this.Root.decompose(context, 0);
 
@@ -49,12 +49,12 @@ class Domain {
     // If this MTR equals the last MTR, then we need to double check whether we ended up
     // just finding the exact same plan. During decomposition each compound task can't check
     // for equality, only for less than, so this case needs to be treated after the fact.
-    let isMTRsEqual = context.MTR.length === context.LastMTR.length;
+    let isMTRsEqual = context.MethodTraversalRecord.length === context.LastMTR.length;
 
     if (isMTRsEqual) {
       log.debug(`Evaluating LastMTR vs result, as they are the same size.`);
-      for (let i = 0; i < context.MTR.length; i++) {
-        if (context.MTR[i] < context.LastMTR[i]) {
+      for (let i = 0; i < context.MethodTraversalRecord.length; i++) {
+        if (context.MethodTraversalRecord[i] < context.LastMTR[i]) {
           isMTRsEqual = false;
           break;
         }
