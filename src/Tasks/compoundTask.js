@@ -51,7 +51,7 @@ class CompoundTask {
   }
 
   defaultValidityTest(context) {
-    if (context === undefined || !(context instanceof Context) || context.Initialized === false) {
+    if (context === undefined || !(context instanceof Context) || context.IsInitialized === false) {
       return false;
     }
 

@@ -35,7 +35,7 @@ class PrimitiveTask {
   }
 
   isValid(context) {
-    if (context === undefined || !(context instanceof Context) || context.Initialized === false) {
+    if (context === undefined || !(context instanceof Context) || context.IsInitialized === false) {
       log.warn("Context is not initialized for primitive task!");
 
       return false;

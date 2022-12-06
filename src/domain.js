@@ -3,6 +3,7 @@ import Context from "./context.js";
 import CompoundTask from "./Tasks/compoundTask.js";
 import PrimitiveTask from "./Tasks/primitiveTask.js";
 import DecompositionStatus from "./decompositionStatus.js";
+import ContextState from "./contextState.js";
 
 class Domain {
   // TODO: Handle actions, conditions, and effects via name lookup as separate objects
@@ -31,13 +32,13 @@ class Domain {
       throw new TypeError(`Domain received non-context object: ${JSON.stringify(context)}`);
     }
 
-    if (!context.Initialized) {
+    if (!context.IsInitialized) {
       throw new Error("Context has not been initialized");
     }
 
     log.debug(`Finding plan for domain: ${this.Name}`);
     // The context is now in planning
-    context.IsExecuting = false;
+    context.ContextState = ContextState.Planning;
 
     let result = { status: DecompositionStatus.Rejected, plan: [] };
 
@@ -95,7 +96,7 @@ class Domain {
     }
 
     // The context is no longer in planning
-    context.IsExecuting = true;
+    context.ContextState = ContextState.Executing;
 
     return result;
   }

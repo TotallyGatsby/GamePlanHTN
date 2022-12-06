@@ -76,9 +76,8 @@ const example1 = {
       tasks: [
         {
           name: "Done",
-          operator: (context) => {
+          operator: () => {
             log.info("Done");
-            context.setDone();
 
             return TaskStatus.Continue;
           },
@@ -86,15 +85,6 @@ const example1 = {
       ],
     },
   ],
-  actions: {
-
-  },
-  conditions: {
-
-  },
-  effects: {
-
-  },
 };
 
 // This style is planned but not supported yet
@@ -140,7 +130,6 @@ let example2 = {
   actions: {
     done: (context) => {
       console.log("Done");
-      context.setDone();
 
       return TaskStatus.Continue;
     },
