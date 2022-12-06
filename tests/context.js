@@ -39,6 +39,12 @@ test("hasState expected behavior", () => {
 test("setState Planning Context expected behavior", () => {
   var ctx = new Context();
 
+  ctx.WorldState = {
+    HasA: 0,
+    HasB: 0,
+    HasC: 0,
+  };
+
   ctx.init();
   ctx.ContextState = ContextState.Planning;
   ctx.setState("HasB", 1, true, EffectType.Permanent);

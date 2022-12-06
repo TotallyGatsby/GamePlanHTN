@@ -2,6 +2,7 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
+import log from "loglevel";
 import ContextState from "./contextState.js";
 import EffectType from "./effectType.js";
 
@@ -11,10 +12,10 @@ class Context {
     this.IsDirty = false;
     this.ContextState = ContextState.Executing;
     this.CurrentDecompositionDepth = 0;
-    this.WorldState = [];
+    this.WorldState = {};
     this.LastMTR = [];
     this.MethodTraversalRecord = [];
-    this.WorldStateChangeStack = [];
+    this.WorldStateChangeStack = null;
     this.MTRDebug = [];
     this.LastMTRDebug = [];
     this.DebugMTR = false;
@@ -26,9 +27,9 @@ class Context {
 
   init() {
     if (!this.WorldStateChangeStack) {
-      this.WorldStateChangeStack = new Array(this.WorldState.length);
-      for (let i = 0; i < this.WorldState.length; i++) {
-        this.WorldStateChangeStack[i] = [];
+      this.WorldStateChangeStack = {};
+      for (const stateKey in this.WorldState) {
+        this.WorldStateChangeStack[stateKey] = [];
       }
     }
 
