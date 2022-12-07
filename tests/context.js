@@ -1,8 +1,25 @@
+// Portions of this file are derived from FluidHTN (MIT License)
+// Copyright (c) 2019 Pål Trefall
+// https://github.com/ptrefall/fluid-hierarchical-task-network
+
+import log from "loglevel";
 import { test } from "uvu";
 import * as assert from "uvu/assert";
 import Context from "../src/context.js";
 import ContextState from "../src/contextState.js";
 import EffectType from "../src/effectType.js";
+
+function getTestContext() {
+  const context = new Context();
+
+  context.WorldState = {
+    HasA: 0,
+    HasB: 0,
+    HasC: 0,
+  };
+
+  return context;
+}
 
 test("Context defaults to Executing", () => {
   var ctx = new Context();
@@ -11,7 +28,7 @@ test("Context defaults to Executing", () => {
 });
 
 test("Init Initializes Collections", () => {
-  var ctx = new Context();
+  var ctx = getTestContext();
 
   ctx.init();
 
@@ -27,7 +44,7 @@ test("Init Initializes Collections", () => {
 });
 
 test("hasState expected behavior", () => {
-  var ctx = new Context();
+  var ctx = getTestContext();
 
   ctx.init();
   ctx.setState("HasB", 1, true, EffectType.Permanent);
@@ -37,13 +54,7 @@ test("hasState expected behavior", () => {
 });
 
 test("setState Planning Context expected behavior", () => {
-  var ctx = new Context();
-
-  ctx.WorldState = {
-    HasA: 0,
-    HasB: 0,
-    HasC: 0,
-  };
+  var ctx = getTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Planning;
@@ -57,5 +68,118 @@ test("setState Planning Context expected behavior", () => {
   assert.equal(ctx.WorldState.HasB, 0);
 });
 
+test("setState executing Context expected behavior", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Executing;
+  ctx.setState("HasB", 1, true, EffectType.Permanent);
+
+  assert.ok(ctx.hasState("HasB"));
+  assert.equal(ctx.WorldStateChangeStack.HasB.length, 0);
+  assert.equal(ctx.WorldState.HasB, 1);
+});
+
+
+test("GetState planning context expected behavior", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Planning;
+  ctx.setState("HasB", 1, true, EffectType.Permanent);
+
+  assert.equal(0, ctx.getState("HasA"));
+  assert.equal(1, ctx.getState("HasB"));
+});
+
+test("GetState executing context expected behavior", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Executing;
+  ctx.setState("HasB", 1, true, EffectType.Permanent);
+
+  assert.equal(0, ctx.getState("HasA"));
+  assert.equal(1, ctx.getState("HasB"));
+});
+
+
+test("GetWorldStateChangeDepth expected behavior", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Executing;
+  ctx.setState("HasB", 1, true, EffectType.Permanent);
+  const changeDepthExecuting = ctx.getWorldStateChangeDepth();
+
+  ctx.ContextState = ContextState.Planning;
+  ctx.setState("HasB", true, EffectType.Permanent);
+  const changeDepthPlanning = ctx.getWorldStateChangeDepth();
+
+  assert.equal(Object.keys(ctx.WorldStateChangeStack).length, Object.keys(changeDepthExecuting).length);
+  assert.equal(changeDepthExecuting.HasA, 0);
+  assert.equal(changeDepthExecuting.HasB, 0);
+
+  assert.equal(Object.keys(ctx.WorldStateChangeStack).length, Object.keys(changeDepthPlanning).length);
+  assert.equal(changeDepthPlanning.HasA, 0);
+  assert.equal(changeDepthPlanning.HasB, 1);
+});
+
+test("Trim for execution expected behavior", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Planning;
+  ctx.setState("HasA", 1, true, EffectType.PlanAndExecute);
+  ctx.setState("HasB", 1, true, EffectType.Permanent);
+  ctx.setState("HasC", 1, true, EffectType.PlanOnly);
+  ctx.trimForExecution();
+
+  assert.equal(ctx.WorldStateChangeStack.HasA.length, 0);
+  assert.equal(ctx.WorldStateChangeStack.HasB.length, 1);
+  assert.equal(ctx.WorldStateChangeStack.HasC.length, 0);
+});
+
+test("Trim for execution throws exception on wrong context state", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Executing;
+  assert.throws(() =>
+    ctx.trimForExecution()
+  );
+});
+
+test("Trim to stack depth expected behavior", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Planning;
+  ctx.setState("HasA", 1, true, EffectType.PlanAndExecute);
+  ctx.setState("HasB", 1, true, EffectType.Permanent);
+  ctx.setState("HasC", 1, true, EffectType.PlanOnly);
+  const stackDepth = ctx.getWorldStateChangeDepth();
+
+  ctx.setState("HasA", 1, false, EffectType.PlanAndExecute);
+  ctx.setState("HasB", 1, false, EffectType.Permanent);
+  ctx.setState("HasC", 1, false, EffectType.PlanOnly);
+  ctx.trimToStackDepth(stackDepth);
+
+  assert.equal(ctx.WorldStateChangeStack.HasA.length, 1);
+  assert.equal(ctx.WorldStateChangeStack.HasB.length, 1);
+  assert.equal(ctx.WorldStateChangeStack.HasC.length, 1);
+});
+
+test("Trim to stack depth throws exception on wrong context state", () => {
+  var ctx = getTestContext();
+
+  ctx.init();
+  ctx.ContextState = ContextState.Executing;
+  const stackDepth = ctx.getWorldStateChangeDepth();
+
+  assert.throws(() =>
+    ctx.trimToStackDepth(stackDepth)
+  );
+});
 
 test.run();

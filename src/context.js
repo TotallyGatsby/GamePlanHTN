@@ -2,6 +2,8 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
+
+// eslint-disable-next-line no-unused-vars -- Keep a reference to logger for ease of development
 import log from "loglevel";
 import ContextState from "./contextState.js";
 import EffectType from "./effectType.js";
@@ -118,10 +120,10 @@ class Context {
   // length of each stack in the `WorldStateChangeStack` array. If a stack
   // is `null`, its length is `0`.
   getWorldStateChangeDepth() {
-    const stackDepth = new Array(this.WorldStateChangeStack.length);
+    const stackDepth = {};
 
-    for (let i = 0; i < this.WorldStateChangeStack.length; i++) {
-      stackDepth[i] = (this.WorldStateChangeStack[i] ? this.WorldStateChangeStack[i].length : 0);
+    for (const worldStateKey of Object.keys(this.WorldStateChangeStack)) {
+      stackDepth[worldStateKey] = (this.WorldStateChangeStack[worldStateKey] ? this.WorldStateChangeStack[worldStateKey].length : 0);
     }
 
     return stackDepth;
@@ -135,8 +137,10 @@ class Context {
       throw new Error("Can not trim a context when in execution mode");
     }
 
-    for (const stack of this.WorldStateChangeStack) {
-      while (stack.length !== 0 && stack[0].Key !== EffectType.Permanent) {
+    for (const worldStateKey of Object.keys(this.WorldStateChangeStack)) {
+      const stack = this.WorldStateChangeStack[worldStateKey];
+
+      while (stack.length !== 0 && stack[0].effectType !== EffectType.Permanent) {
         stack.shift();
       }
     }
@@ -150,10 +154,10 @@ class Context {
       throw new Error("Can not trim a context when in execution mode");
     }
 
-    for (let i = 0; i < stackDepth.length; i++) {
-      const stack = this.WorldStateChangeStack[i];
+    for (const stackDepthKey of Object.keys(stackDepth)) {
+      const stack = this.WorldStateChangeStack[stackDepthKey];
 
-      while (stack.length > stackDepth[i]) {
+      while (stack.length > stackDepth[stackDepthKey]) {
         stack.pop();
       }
     }
