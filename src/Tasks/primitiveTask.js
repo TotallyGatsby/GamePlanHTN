@@ -63,7 +63,7 @@ class PrimitiveTask {
   }
 
   stop() {
-    // TODO: Do something on stop?
+    // TODO: Implement Stop on operators
   }
 }
 

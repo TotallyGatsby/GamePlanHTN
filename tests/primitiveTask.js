@@ -4,6 +4,19 @@ import * as assert from "uvu/assert";
 
 import PrimitiveTask from "../src/Tasks/primitiveTask.js";
 import Context from "../src/context.js";
+import Effect from "../src/effect.js";
+
+function getTestContext() {
+  const context = new Context();
+
+  context.WorldState = {
+    HasA: 0,
+    HasB: 0,
+    HasC: 0,
+  };
+
+  return context;
+}
 
 const prim = {
   name: "foo",
@@ -76,6 +89,41 @@ test("Test a passed precondition ", () => {
 
   context.init();
   assert.is(task.isValid(context), true);
+});
+
+test("Test a conditions that aren't functions are invalid ", () => {
+  const task = new PrimitiveTask(primPrecon2);
+
+  task.Conditions.push("Spaghetti");
+
+  const context = new Context();
+
+  context.init();
+  assert.not(task.isValid(context));
+});
+
+test("Test a conditions that return false invalidate ", () => {
+  const task = new PrimitiveTask(primPrecon2);
+
+  task.Conditions.push(() => false);
+
+  const context = new Context();
+
+  context.init();
+  assert.not(task.isValid(context));
+});
+
+test("Applying effects, expected behavior ", () => {
+  const ctx = getTestContext();
+  const task = new PrimitiveTask(primPrecon2);
+
+  task.Effects.push(new Effect((context) => {
+    context.Done = true;
+  }));
+
+  task.applyEffects(ctx);
+
+  assert.ok(ctx.Done);
 });
 
 test.run();
