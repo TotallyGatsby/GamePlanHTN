@@ -33,7 +33,7 @@ function getEmptyCompoundTask() {
 function getEmptySelectorTask(name) {
   return new CompoundTask({
     name,
-    type: "selector",
+    type: "select",
     conditions: [],
     effects: [],
     tasks: [],

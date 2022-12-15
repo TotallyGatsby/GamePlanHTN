@@ -38,6 +38,20 @@ class PrimitiveTask {
     this.ExecutingConditions = [];
   }
 
+  toJSON() {
+    // Clone the object to prevent modifying the original object
+    const json = { ...this };
+
+    // Replace the parent object with its name
+    if (json.Parent) {
+      json.Parent = json.Parent.Name;
+    } else {
+      json.Parent = null;
+    }
+
+    return json;
+  }
+
   isValid(context) {
     if (context === undefined || !(context instanceof Context) || context.IsInitialized === false) {
       log.warn("Context is not initialized for primitive task!");

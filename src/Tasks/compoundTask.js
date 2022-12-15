@@ -50,6 +50,21 @@ class CompoundTask {
     }
   }
 
+  toJSON() {
+    // Clone the object to prevent modifying the original object
+    const json = { ...this };
+
+    // Replace the parent object with its name
+    if (json.Parent) {
+      json.Parent = json.Parent.Name;
+    } else {
+      json.Parent = null;
+    }
+
+    return json;
+  }
+
+
   isValid(context) {
     return this._validityTest(context, this);
   }
