@@ -9,7 +9,7 @@ on:
       - '**'
 
 jobs:
-  
+
   lint:
     runs-on: ubuntu-latest
 
@@ -21,10 +21,10 @@ jobs:
         with:
           node-version: 16
           cache: 'npm'
-      
+
       - name: npm install
         run: npm ci
-        
+
       - name: lint
         run: npm run lint --quiet
 
@@ -34,26 +34,26 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [ 12, 14, 16, 17 ]
+        node-version: [ 14, 16, 17 ]
         os: [ ubuntu-latest, windows-latest ]
 
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Setup node ${{ matrix.node-version }}
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
+
     - name: npm install
       run: npm ci
-    
+
     - name: test
       run: npm test
       env:
         CI: true
-        
+
     # Run codecov after all builds, and only on a single environment
     - name: Gather Coverage
       if: matrix.os == 'ubuntu-latest' && matrix.node-version == 16
