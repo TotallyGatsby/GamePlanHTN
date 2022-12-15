@@ -1,3 +1,7 @@
+// Portions of this file are derived from FluidHTN (MIT License)
+// Copyright (c) 2019 Pål Trefall
+// https://github.com/ptrefall/fluid-hierarchical-task-network
+
 import log from "loglevel";
 import Context from "../context.js";
 import DecompositionStatus from "../decompositionStatus.js";
@@ -77,6 +81,10 @@ class CompoundTask {
 
   decompose(context, startIndex) {
     return this._decompose(context, startIndex, this);
+  }
+
+  addSubtask(subtask) {
+    this.Children.push(subtask);
   }
 }
 

@@ -1,3 +1,7 @@
+// Portions of this file are derived from FluidHTN (MIT License)
+// Copyright (c) 2019 Pål Trefall
+// https://github.com/ptrefall/fluid-hierarchical-task-network
+
 import log from "loglevel";
 import Context from "./context.js";
 import CompoundTask from "./Tasks/compoundTask.js";
@@ -12,7 +16,7 @@ class Domain {
     this.Name = name;
     this.Tasks = [];
 
-    tasks.forEach((task) => {
+    tasks?.forEach((task) => {
       if (typeof (task) === "function" || task.operator) {
         this.Tasks.push(new PrimitiveTask(task));
       } else {
@@ -25,6 +29,14 @@ class Domain {
     this.Root = new CompoundTask({ name: "Root", tasks, type: "select" });
   }
 
+  add(parentTask, childTask) {
+    if (parentTask === childTask) {
+      throw Error("Parent and child cannot be the same task!");
+    }
+
+    parentTask.addSubtask(childTask);
+    childTask.Parent = parentTask;
+  }
   // TODO: Refactor into smaller methods
   // eslint-disable-next-line max-statements -- Cleanup later
   findPlan(context) {
@@ -34,6 +46,10 @@ class Domain {
 
     if (!context.IsInitialized) {
       throw new Error("Context has not been initialized");
+    }
+
+    if (!context.MethodTraversalRecord) {
+      throw new Error("We require the Method Traversal Record to have a valid instance.");
     }
 
     log.debug(`Finding plan for domain: ${this.Name}`);

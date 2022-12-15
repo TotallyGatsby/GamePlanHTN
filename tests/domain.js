@@ -1,13 +1,20 @@
+// Portions of this file are derived from FluidHTN (MIT License)
+// Copyright (c) 2019 Pål Trefall
+// https://github.com/ptrefall/fluid-hierarchical-task-network
+
 import { test } from "uvu";
+import * as assert from "uvu/assert";
 import log from "loglevel";
-import Context from "../src/context.js";
 import Domain from "../src/domain.js";
 import TaskStatus from "../src/taskStatus.js";
+import PrimitiveTask from "../src/Tasks/primitiveTask.js";
+import decompositionStatus from "../src/decompositionStatus.js";
+import * as testUtil from "./utils.js";
 
 log.enableAll();
 
 const example1 = {
-  name: "Get A, B, then C",
+  name: "Test",
   tasks: [
     {
       name: "GetC",
@@ -167,10 +174,80 @@ let example2 = {
 };
 */
 
+
 test("Create a Domain successfully", () => {
   new Domain(example1);
 });
 
+test("Name and Root are added to domains", () => {
+  const domain = new Domain(example1);
+
+  assert.ok(domain.Root);
+  assert.equal(domain.Name, "Test");
+});
+
+test("Add Subtask to domain expected behavior", () => {
+  const domain = new Domain({});
+
+  const task1 = testUtil.getEmptyCompoundTask();
+  const task2 = new PrimitiveTask({
+    name: "foo",
+    conditions: [],
+    effects: [],
+    operator: () => {
+      log.info("test");
+    },
+  });
+
+  domain.add(task1, task2);
+  assert.ok(task1.Children.includes(task2));
+  assert.equal(task2.Parent, task1);
+});
+
+test("Planning throws without a context", () => {
+  const domain = new Domain({});
+
+  assert.throws(() => {
+    domain.findPlan(null);
+  });
+});
+
+test("Planning throws with an uninitialized context", () => {
+  const ctx = testUtil.getEmptyTestContext();
+  const domain = new Domain({});
+
+  assert.throws(() => {
+    domain.findPlan(ctx);
+  });
+});
+
+
+test("Planning returns null if there are no tasks", () => {
+  const ctx = testUtil.getEmptyTestContext();
+
+  ctx.init();
+
+  const domain = new Domain({ name: "Test" });
+  const planResult = domain.findPlan(ctx);
+
+  assert.equal(planResult.status, decompositionStatus.Rejected);
+  assert.equal(planResult.plan.length, 0);
+});
+
+test("MTR Null throws exception", () => {
+  var ctx = testUtil.getEmptyTestContext();
+
+  ctx.init();
+  ctx.MethodTraversalRecord = null;
+
+  const domain = new Domain({ name: "Test" });
+
+  assert.throws(() => {
+    domain.findPlan(ctx);
+  });
+});
+
+/*
 test("Attempt to plan a domain successfully", () => {
   const testDomain = new Domain(example1);
   const context = new Context();
@@ -182,5 +259,5 @@ test("Attempt to plan a domain successfully", () => {
   log.info(decompositionStatus.status);
   log.info(JSON.stringify(decompositionStatus.plan));
 });
-
+*/
 test.run();

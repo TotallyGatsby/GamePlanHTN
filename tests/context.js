@@ -2,33 +2,21 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
-import log from "loglevel";
 import { test } from "uvu";
 import * as assert from "uvu/assert";
-import Context from "../src/context.js";
 import ContextState from "../src/contextState.js";
 import EffectType from "../src/effectType.js";
+import * as TestUtil from "./utils.js";
 
-function getTestContext() {
-  const context = new Context();
-
-  context.WorldState = {
-    HasA: 0,
-    HasB: 0,
-    HasC: 0,
-  };
-
-  return context;
-}
 
 test("Context defaults to Executing", () => {
-  var ctx = new Context();
+  var ctx = TestUtil.getEmptyTestContext();
 
   assert.is(ctx.ContextState, ContextState.Executing);
 });
 
 test("Init Initializes Collections", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
 
@@ -44,7 +32,7 @@ test("Init Initializes Collections", () => {
 });
 
 test("hasState expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.setState("HasB", 1, true, EffectType.Permanent);
@@ -54,7 +42,7 @@ test("hasState expected behavior", () => {
 });
 
 test("setState Planning Context expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Planning;
@@ -69,7 +57,7 @@ test("setState Planning Context expected behavior", () => {
 });
 
 test("setState executing Context expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Executing;
@@ -82,7 +70,7 @@ test("setState executing Context expected behavior", () => {
 
 
 test("GetState planning context expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Planning;
@@ -93,7 +81,7 @@ test("GetState planning context expected behavior", () => {
 });
 
 test("GetState executing context expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Executing;
@@ -105,7 +93,7 @@ test("GetState executing context expected behavior", () => {
 
 
 test("GetWorldStateChangeDepth expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Executing;
@@ -126,7 +114,7 @@ test("GetWorldStateChangeDepth expected behavior", () => {
 });
 
 test("Trim for execution expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Planning;
@@ -141,7 +129,7 @@ test("Trim for execution expected behavior", () => {
 });
 
 test("Trim for execution throws exception on wrong context state", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Executing;
@@ -151,7 +139,7 @@ test("Trim for execution throws exception on wrong context state", () => {
 });
 
 test("Trim to stack depth expected behavior", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Planning;
@@ -171,7 +159,7 @@ test("Trim to stack depth expected behavior", () => {
 });
 
 test("Trim to stack depth throws exception on wrong context state", () => {
-  var ctx = getTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.ContextState = ContextState.Executing;
