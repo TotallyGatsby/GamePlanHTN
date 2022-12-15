@@ -40,6 +40,16 @@ function getEmptySelectorTask(name) {
   });
 }
 
+function getEmptySequenceTask(name) {
+  return new CompoundTask({
+    name,
+    type: "sequence",
+    conditions: [],
+    effects: [],
+    tasks: [],
+  });
+}
+
 function getSimplePrimitiveTask(name) {
   return new PrimitiveTask({
     name,
@@ -61,4 +71,5 @@ export {
   getEmptyTestDomain,
   getEmptySelectorTask,
   getSimplePrimitiveTask,
+  getEmptySequenceTask,
 };

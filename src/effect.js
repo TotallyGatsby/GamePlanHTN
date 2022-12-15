@@ -2,17 +2,24 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
+import EffectType from "./effectType.js";
+
 class Effect {
   constructor(props) {
-    // TODO: Handle more complex Effects, e.g. planning only Effects
     if (typeof (props) === "function") {
       this._effectFunction = props;
+      this.Type = EffectType.PlanOnly;
+      this.Name = "Unnamed Effect";
+    } else {
+      this._effectFunction = props.action;
+      this.Type = props.type;
+      this.Name = props.name;
     }
   }
 
   apply(context) {
     if (typeof (this._effectFunction) === "function") {
-      this._effectFunction(context);
+      this._effectFunction(context, this.type);
     }
   }
 }

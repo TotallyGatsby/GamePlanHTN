@@ -37,6 +37,7 @@ class Domain {
     parentTask.addSubtask(childTask);
     childTask.Parent = parentTask;
   }
+
   // TODO: Refactor into smaller methods
   // eslint-disable-next-line max-statements -- Cleanup later
   findPlan(context) {
