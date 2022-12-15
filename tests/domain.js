@@ -7,9 +7,9 @@ import * as assert from "uvu/assert";
 import log from "loglevel";
 import Domain from "../src/domain.js";
 import TaskStatus from "../src/taskStatus.js";
-import PrimitiveTask from "../src/Tasks/primitiveTask.js";
-import decompositionStatus from "../src/decompositionStatus.js";
-import * as testUtil from "./utils.js";
+import DecompositionStatus from "../src/decompositionStatus.js";
+import * as TestUtil from "./utils.js";
+import ContextState from "../src/contextState.js";
 
 log.enableAll();
 
@@ -189,15 +189,8 @@ test("Name and Root are added to domains", () => {
 test("Add Subtask to domain expected behavior", () => {
   const domain = new Domain({});
 
-  const task1 = testUtil.getEmptyCompoundTask();
-  const task2 = new PrimitiveTask({
-    name: "foo",
-    conditions: [],
-    effects: [],
-    operator: () => {
-      log.info("test");
-    },
-  });
+  const task1 = TestUtil.getEmptyCompoundTask();
+  const task2 = TestUtil.getSimplePrimitiveTask("foo");
 
   domain.add(task1, task2);
   assert.ok(task1.Children.includes(task2));
@@ -213,7 +206,7 @@ test("Planning throws without a context", () => {
 });
 
 test("Planning throws with an uninitialized context", () => {
-  const ctx = testUtil.getEmptyTestContext();
+  const ctx = TestUtil.getEmptyTestContext();
   const domain = new Domain({});
 
   assert.throws(() => {
@@ -223,19 +216,19 @@ test("Planning throws with an uninitialized context", () => {
 
 
 test("Planning returns null if there are no tasks", () => {
-  const ctx = testUtil.getEmptyTestContext();
+  const ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
 
   const domain = new Domain({ name: "Test" });
   const planResult = domain.findPlan(ctx);
 
-  assert.equal(planResult.status, decompositionStatus.Rejected);
+  assert.equal(planResult.status, DecompositionStatus.Rejected);
   assert.equal(planResult.plan.length, 0);
 });
 
 test("MTR Null throws exception", () => {
-  var ctx = testUtil.getEmptyTestContext();
+  var ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.MethodTraversalRecord = null;
@@ -247,17 +240,35 @@ test("MTR Null throws exception", () => {
   });
 });
 
-/*
-test("Attempt to plan a domain successfully", () => {
-  const testDomain = new Domain(example1);
-  const context = new Context();
+test("Planning leaves context in Executing state", () => {
+  const ctx = TestUtil.getEmptyTestContext();
 
-  context.init();
+  ctx.init();
 
-  const decompositionStatus = testDomain.findPlan(context);
+  const domain = TestUtil.getEmptyTestDomain();
 
-  log.info(decompositionStatus.status);
-  log.info(JSON.stringify(decompositionStatus.plan));
+  domain.findPlan(ctx);
+  assert.equal(ctx.ContextState, ContextState.Executing);
 });
-*/
+
+test("FindPlan expected behavior", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = TestUtil.getSimplePrimitiveTask("Sub-task");
+
+  domain.add(domain.Root, task1);
+  domain.add(task1, task2);
+
+  const planResult = domain.findPlan(ctx);
+
+  assert.equal(planResult.status, DecompositionStatus.Succeeded);
+  assert.ok(planResult.plan);
+  assert.equal(planResult.plan.length, 1);
+  assert.equal(planResult.plan[0].Name, "Sub-task");
+});
+
 test.run();
