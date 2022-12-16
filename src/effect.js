@@ -2,7 +2,6 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
-import EffectType from "./effectType.js";
 
 class Effect {
   constructor(props) {

@@ -2,7 +2,6 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
-import log from "loglevel";
 import Context from "./context.js";
 import CompoundTask from "./Tasks/compoundTask.js";
 import PrimitiveTask from "./Tasks/primitiveTask.js";
