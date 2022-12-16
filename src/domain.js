@@ -167,7 +167,7 @@ class Domain {
         const stack = context.WorldStateChangeStack[worldStateKey];
 
         if (stack?.length > 0) {
-          context.WorldState[worldStateKey] = stack.pop();
+          context.WorldState[worldStateKey] = stack.pop().value;
           context.WorldStateChangeStack[worldStateKey] = [];
         }
       }

@@ -286,6 +286,7 @@ test("FindPlan trims non permanent state changes", () => {
     name: "TestEffect1",
     type: EffectType.PlanOnly,
     action: (context, type) => {
+      log.debug(`!!!!${type}`);
       context.setState("HasA", 1, true, type);
     },
   }));

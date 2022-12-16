@@ -8,7 +8,7 @@ class Effect {
   constructor(props) {
     if (typeof (props) === "function") {
       this._effectFunction = props;
-      this.Type = EffectType.PlanOnly;
+      this.Type = null;
       this.Name = "Unnamed Effect";
     } else {
       this._effectFunction = props.action;
@@ -19,7 +19,7 @@ class Effect {
 
   apply(context) {
     if (typeof (this._effectFunction) === "function") {
-      this._effectFunction(context, this.type);
+      this._effectFunction(context, this.Type);
     }
   }
 }
