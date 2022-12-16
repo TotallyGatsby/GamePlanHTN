@@ -3,7 +3,6 @@
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
 import log from "loglevel";
-import Context from "../context.js";
 import DecompositionStatus from "../decompositionStatus.js";
 import PrimitiveTask from "./primitiveTask.js";
 import * as SelectorTask from "./selectorTask.js";
@@ -70,10 +69,6 @@ class CompoundTask {
   }
 
   defaultValidityTest(context) {
-    if (context === undefined || !(context instanceof Context) || context.IsInitialized === false) {
-      return false;
-    }
-
     // Evaluate every condition for this task
     // If any return false, the condition for this task is not valid
     for (let index = 0; index < this.Conditions.length; index++) {
@@ -100,6 +95,14 @@ class CompoundTask {
 
   addSubtask(subtask) {
     this.Children.push(subtask);
+
+    return this;
+  }
+
+  addCondition(condition) {
+    this.Conditions.push(condition);
+
+    return this;
   }
 }
 

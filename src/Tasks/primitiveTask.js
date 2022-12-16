@@ -53,10 +53,8 @@ class PrimitiveTask {
   }
 
   isValid(context) {
-    if (context === undefined || !(context instanceof Context) || context.IsInitialized === false) {
-      log.warn("Context is not initialized for primitive task!");
-
-      return false;
+    if (context.LogDecomposition) {
+      log.debug(`PrimitiveTask.IsValid check`);
     }
 
     // Check each of our conditions for validity. If any of them are false, this task cannot be
@@ -78,6 +76,12 @@ class PrimitiveTask {
     this.Effects.forEach((effect) => {
       effect.apply(context);
     });
+  }
+
+  addCondition(condition) {
+    this.Conditions.push(condition);
+
+    return this;
   }
 
   stop() {

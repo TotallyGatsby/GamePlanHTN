@@ -7,6 +7,7 @@ import Domain from "../src/domain.js";
 import CompoundTask from "../src/Tasks/compoundTask.js";
 import PrimitiveTask from "../src/Tasks/primitiveTask.js";
 import log from "loglevel";
+import Effect from "../src/effect.js";
 
 function getEmptyTestContext() {
   const context = new Context();
@@ -65,6 +66,16 @@ function getEmptyTestDomain() {
   return new Domain({ name: "Test" });
 }
 
+function getSimpleEffect(name, type, state) {
+  return new Effect({
+    name,
+    type,
+    action: (context, innerType) => {
+      context.setState(state, 1, true, innerType);
+    },
+  });
+}
+
 export {
   getEmptyTestContext,
   getEmptyCompoundTask,
@@ -72,4 +83,5 @@ export {
   getEmptySelectorTask,
   getSimplePrimitiveTask,
   getEmptySequenceTask,
+  getSimpleEffect,
 };

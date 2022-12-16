@@ -10,7 +10,6 @@ import TaskStatus from "../src/taskStatus.js";
 import DecompositionStatus from "../src/decompositionStatus.js";
 import * as TestUtil from "./utils.js";
 import ContextState from "../src/contextState.js";
-import Effect from "../src/effect.js";
 import EffectType from "../src/effectType.js";
 
 log.enableAll();
@@ -282,34 +281,21 @@ test("FindPlan trims non permanent state changes", () => {
   const task1 = TestUtil.getEmptySequenceTask("Test");
   const task2 = TestUtil.getSimplePrimitiveTask("Sub-task1");
 
-  task2.Effects.push(new Effect({
-    name: "TestEffect1",
-    type: EffectType.PlanOnly,
-    action: (context, type) => {
-      log.debug(`!!!!${type}`);
-      context.setState("HasA", 1, true, type);
-    },
-  }));
+  task2.Effects.push(TestUtil.getSimpleEffect("TestEffect1",
+    EffectType.PlanOnly,
+    "HasA"));
 
   const task3 = TestUtil.getSimplePrimitiveTask("Sub-task2");
 
-  task3.Effects.push(new Effect({
-    name: "TestEffect2",
-    type: EffectType.PlanAndExecute,
-    action: (context, type) => {
-      context.setState("HasB", 1, true, type);
-    },
-  }));
+  task3.Effects.push(TestUtil.getSimpleEffect("TestEffect2",
+    EffectType.PlanAndExecute,
+    "HasB"));
 
   const task4 = TestUtil.getSimplePrimitiveTask("Sub-task3");
 
-  task4.Effects.push(new Effect({
-    name: "TestEffect3",
-    type: EffectType.Permanent,
-    action: (context, type) => {
-      context.setState("HasC", 1, true, type);
-    },
-  }));
+  task4.Effects.push(TestUtil.getSimpleEffect("TestEffect3",
+    EffectType.Permanent,
+    "HasC"));
 
   domain.add(domain.Root, task1);
   domain.add(task1, task2);
@@ -327,5 +313,43 @@ test("FindPlan trims non permanent state changes", () => {
   assert.equal(ctx.WorldState.HasC, 1);
   assert.equal(planResult.plan.length, 3);
 });
+
+// eslint-disable-next-line max-statements -- Long test is long
+/*
+test("FindPlan clears state change when plan is empty", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySequenceTask("Test");
+  const task2 = TestUtil.getSimplePrimitiveTask("Sub-task1");
+  const task3 = TestUtil.getSimplePrimitiveTask("Sub-task2");
+  const task4 = TestUtil.getSimplePrimitiveTask("Sub-task3");
+  const task5 = TestUtil.getSimplePrimitiveTask("Sub-task4");
+
+  task2.Effects.push(TestUtil.getSimpleEffect("TestEffect1", EffectType.PlanOnly, "HasA"));
+  task3.Effects.push(TestUtil.getSimpleEffect("TestEffect2", EffectType.PlanAndExecute, "HasB"));
+  task4.Effects.push(TestUtil.getSimpleEffect("TestEffect3", EffectType.Permanent, "HasC"));
+
+  task5.Conditions.push((context) => context.Done === true);
+
+  domain.add(domain.Root, task1);
+  domain.add(task1, task2);
+  domain.add(task1, task3);
+  domain.add(task1, task4);
+  domain.add(task1, task5);
+
+  const status = domain.findPlan(ctx);
+
+  assert.equal(status.status, DecompositionStatus.Rejected);
+  assert.equal(ctx.WorldStateChangeStack.HasA.length, 0);
+  assert.equal(ctx.WorldStateChangeStack.HasB.length, 0);
+  assert.equal(ctx.WorldStateChangeStack.HasC.length, 0);
+  assert.equal(ctx.WorldState.HasA, 0);
+  assert.equal(ctx.WorldState.HasB, 0);
+  assert.equal(ctx.WorldState.HasC, 0);
+  assert.equal(status.plan, []);
+});
+*/
 
 test.run();

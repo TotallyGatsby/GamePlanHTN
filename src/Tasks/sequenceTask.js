@@ -70,10 +70,14 @@ const decompose = (context, startIndex, task) => {
     status: DecompositionStatus.Rejected,
   };
 
+  const oldStackDepth = context.getWorldStateChangeDepth();
+
   for (let index = startIndex; index < task.Children.length; index++) {
     const childTask = task.Children[index];
 
-    log.debug(`Evaluating child task: ${childTask.Name}`);
+    if (context.LogDecomposition) {
+      log.debug(`Sequence.OnDecompose:Task index: ${index}: ${childTask?.Name}`);
+    }
 
     // Note: result and plan will be mutated by this function
     // TODO: To make this simpler to understand should these functions return an object that contains
