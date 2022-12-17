@@ -18,7 +18,7 @@ Please do not use it for production use cases. Many of the unit tests are passin
 * Early rejection of replanning that cannot be completed.
 * Extensible
 * Decomposition logging, for debugging.
-* 34 unit tests (and growing!)
+* 70 unit tests (and growing!)
 
 
 # Library
