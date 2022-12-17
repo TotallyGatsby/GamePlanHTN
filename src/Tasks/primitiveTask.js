@@ -3,7 +3,6 @@
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
 import log from "loglevel";
-import Context from "../context.js";
 import Effect from "../effect.js";
 
 class PrimitiveTask {

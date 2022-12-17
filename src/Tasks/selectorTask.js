@@ -53,7 +53,6 @@ const onDecomposeCompoundTask = (context, childTask, taskIndex, plan) => {
 
   const childResult = childTask.decompose(context, 0);
 
-  log.debug(`Decomposing Compound Child Task Result: ${JSON.stringify(childResult)}`);
   // If status is rejected, that means the entire planning procedure should cancel.
   if (childResult.status === DecompositionStatus.Rejected) {
     return {
@@ -73,11 +72,11 @@ const onDecomposeCompoundTask = (context, childTask, taskIndex, plan) => {
     };
   }
 
-  log.debug(`Existing plan: ${JSON.stringify(plan)}`);
-
   // If we successfully decomposed our subtask, add the resulting plan to this plan
+  plan = plan.concat(childResult.plan);
+
   return {
-    plan: plan.concat(childResult.plan),
+    plan,
     status: (plan.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded,
   };
 };
@@ -162,9 +161,6 @@ const decompose = (context, startIndex, task) => {
     const childTask = task.Children[index];
 
     // Note: result and plan will be mutated by this function
-    // TODO: To make this simpler to understand should these functions return an object that contains
-    // a status and the plan?
-
     result = onDecomposeTask(context, childTask, index, result.plan);
 
     // If we cannot make a plan OR if we completed a plan, short circuit this for loop

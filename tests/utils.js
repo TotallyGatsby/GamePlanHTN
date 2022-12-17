@@ -62,6 +62,10 @@ function getSimplePrimitiveTask(name) {
   });
 }
 
+function getSimplePrimitiveTaskWithDoneCondition(name) {
+  return getSimplePrimitiveTask(name).addCondition((context) => context.Done === true);
+}
+
 function getEmptyTestDomain() {
   return new Domain({ name: "Test" });
 }
@@ -82,6 +86,7 @@ export {
   getEmptyTestDomain,
   getEmptySelectorTask,
   getSimplePrimitiveTask,
+  getSimplePrimitiveTaskWithDoneCondition,
   getEmptySequenceTask,
   getSimpleEffect,
 };
