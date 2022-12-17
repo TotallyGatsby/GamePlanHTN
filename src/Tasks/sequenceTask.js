@@ -63,8 +63,6 @@ const onDecomposeTask = (context, childTask, taskIndex, oldStackDepth, plan) => 
 
 // For a sequence task, all children need to successfully decompose
 const decompose = (context, startIndex, task) => {
-  log.debug(`Decomposing Task: ${task.Name} with start index: ${startIndex}`);
-
   let result = {
     plan: [],
     status: DecompositionStatus.Rejected,
@@ -80,20 +78,17 @@ const decompose = (context, startIndex, task) => {
     }
 
     // Note: result and plan will be mutated by this function
-    // TODO: To make this simpler to understand should these functions return an object that contains
-    // a status and the plan?
-    result = onDecomposeTask(context, childTask, index, undefined, result.plan);
+    result = onDecomposeTask(context, childTask, index, oldStackDepth, result.plan);
 
     // If we cannot make a plan OR if any task failed, short circuit this for loop
-    if (result.status === DecompositionStatus.Rejected || result.status === DecompositionStatus.Failed) {
-      log.debug(`Child task of [${task.Name}] named [${childTask.Name}] failed to decompose with status: ${result.status}`);
-
+    if (result.status === DecompositionStatus.Rejected ||
+      result.status === DecompositionStatus.Failed ||
+      result.status === DecompositionStatus.Partial) {
       return result;
     }
   }
 
   result.status = result.plan.length === 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
-  log.debug(`Resulting plan from ${task.Name}: ${JSON.stringify(result)}`);
 
   return result;
 };
