@@ -314,7 +314,8 @@ test("FindPlan trims non permanent state changes", () => {
   assert.equal(planResult.plan.length, 3);
 });
 
-/*
+
+// eslint-disable-next-line max-statements -- Long test is long
 test("FindPlan clears state change when plan is empty", () => {
   const ctx = TestUtil.getEmptyTestContext();
 
@@ -349,6 +350,6 @@ test("FindPlan clears state change when plan is empty", () => {
   assert.equal(ctx.WorldState.HasC, 0);
   assert.equal(status.plan, []);
 });
-*/
+
 
 test.run();

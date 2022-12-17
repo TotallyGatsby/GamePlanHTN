@@ -83,6 +83,12 @@ class PrimitiveTask {
     return this;
   }
 
+  addEffect(effect) {
+    this.Effects.push(effect);
+
+    return this;
+  }
+
   stop() {
     // TODO: Implement Stop on operators
   }
