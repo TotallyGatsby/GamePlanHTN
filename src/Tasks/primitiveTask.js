@@ -92,6 +92,12 @@ class PrimitiveTask {
   stop() {
     // TODO: Implement Stop on operators
   }
+
+  setOperator(operator) {
+    this.operator = operator;
+
+    return this;
+  }
 }
 
 export default PrimitiveTask;

@@ -2,10 +2,10 @@
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
 
-import PrimitiveTask from "./Tasks/primitiveTask";
-import TaskStatus from "./taskStatus";
-import DecompositionStatus from "./decompositionStatus";
-import EffectType from "./effectType";
+import PrimitiveTask from "./Tasks/primitiveTask.js";
+import TaskStatus from "./taskStatus.js";
+import DecompositionStatus from "./decompositionStatus.js";
+import EffectType from "./effectType.js";
 
 class Planner {
   constructor() {

@@ -98,3 +98,5 @@ test("Effect with incorrect type for action doesn't crash", () => {
   assert.equal(testEffect._effectFunction, effectFunction);
   assert.not(testContext.Done);
 });
+
+test.run();
