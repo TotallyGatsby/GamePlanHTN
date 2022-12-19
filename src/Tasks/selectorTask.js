@@ -75,6 +75,17 @@ const onDecomposeCompoundTask = (context, childTask, taskIndex, plan) => {
   // If we successfully decomposed our subtask, add the resulting plan to this plan
   plan = plan.concat(childResult.plan);
 
+  if (context.HasPausedPartialPlan) {
+    if (context.LogDecomposition) {
+      log.debug(`Selector.OnDecomposeCompoundTask:Return partial plan at index ${taskIndex}!`);
+    }
+
+    return {
+      plan,
+      status: DecompositionStatus.Partial,
+    };
+  }
+
   return {
     plan,
     status: (plan.length === 0) ? DecompositionStatus.Failed : DecompositionStatus.Succeeded,

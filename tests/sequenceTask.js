@@ -6,6 +6,7 @@ import DecompositionStatus from "../src/decompositionStatus.js";
 import Effect from "../src/effect.js";
 import EffectType from "../src/effectType.js";
 import * as TestUtil from "./utils.js";
+import PausePlanTask from "../src/Tasks/pausePlanTask.js";
 
 test("Add Condition", () => {
   const task = TestUtil.getEmptySequenceTask("Test");
@@ -394,74 +395,82 @@ test("Decompose Nested Compound Subtask Fail Return to Previous World State expe
   assert.equal(1, ctx.getState("HasC"));
 });
 
-/* TODO: Implement PausePlan tasks
-        public void PausePlan_ExpectedBehavior()
+
 test("PausePlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
-  ctx.init()
+
+  ctx.init();
 
   const task = TestUtil.getEmptySequenceTask("Test");
+
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task1"));
   task.addSubtask(new PausePlanTask());
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task2"));
 
-  const {status, plan} = task.decompose(ctx,0);
+  const { status, plan } = task.decompose(ctx, 0);
 
   assert.equal(status, DecompositionStatus.Partial);
   assert.ok(plan);
   assert.equal(plan.length, 1);
-  assert.equal("Sub-task1", plan.Peek().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
-  assert.equal(ctx.PartialPlanQueue.length,  1);
-  assert.equal(task, ctx.PartialPlanQueue.Peek().Task);
-  assert.equal(2, ctx.PartialPlanQueue.Peek().TaskIndex);
+  assert.equal("Sub-task1", plan[0].Name);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 1);
+  assert.equal(task, ctx.PartialPlanQueue[0].task);
+  assert.equal(2, ctx.PartialPlanQueue[0].taskIndex);
 });
 
-        public void ContinuePausedPlan_ExpectedBehavior()
-{
+test("Continue PausePlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
-  ctx.init()
+
+  ctx.init();
 
   const task = TestUtil.getEmptySequenceTask("Test");
+
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task1"));
   task.addSubtask(new PausePlanTask());
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task2"));
 
-  const {status, plan} = task.decompose(ctx,0);
+  // eslint-disable-next-line prefer-const -- plan is not const
+  let { status, plan } = task.decompose(ctx, 0);
 
   assert.equal(status, DecompositionStatus.Partial);
   assert.ok(plan);
   assert.equal(plan.length, 1);
   assert.equal("Sub-task1", plan.shift().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
-  assert.equal(ctx.PartialPlanQueue.length,  1);
-  assert.equal(task, ctx.PartialPlanQueue.Peek().Task);
-  assert.equal(2, ctx.PartialPlanQueue.Peek().TaskIndex);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 1);
+  assert.equal(task, ctx.PartialPlanQueue[0].task);
+  assert.equal(2, ctx.PartialPlanQueue[0].taskIndex);
 
   ctx.HasPausedPartialPlan = false;
-  plan = new Queue < ITask > ();
+  plan = [];
   while (ctx.PartialPlanQueue.length > 0) {
-    const kvp = ctx.PartialPlanQueue.Dequeue();
-    const s = kvp.Task.Decompose(ctx, kvp.TaskIndex, out const p);
-    if (s == DecompositionStatus.Succeeded || s == DecompositionStatus.Partial) {
+    const kvp = ctx.PartialPlanQueue.shift();
+
+    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.taskIndex);
+
+    if (s === DecompositionStatus.Succeeded || s === DecompositionStatus.Partial) {
       while (p.length > 0) {
-        plan.Enqueue(p.Dequeue());
+        plan.push(p.shift());
       }
     }
   }
   assert.ok(plan);
   assert.equal(plan.length, 1);
-  assert.equal("Sub-task2", plan.Peek().Name);
+  assert.equal("Sub-task2", plan[0].Name);
 });
 
-        public void NestedPausePlan_ExpectedBehavior()
-{
+
+test("Nested PausePlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
-  ctx.init()
+
+  ctx.LogDecomposition = true;
+  ctx.init();
 
   const task = TestUtil.getEmptySequenceTask("Test");
-  const task2 = TestUtil.getEmptySelectorTask("Test2" };
-  const task3 =TestUtil.getEmptySequenceTask("Test3" };
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getEmptySequenceTask("Test3");
+
   task3.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task1"));
   task3.addSubtask(new PausePlanTask());
   task3.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task2"));
@@ -472,29 +481,32 @@ test("PausePlan expected behavior", () => {
   task.addSubtask(task2);
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task4"));
 
-  const {status, plan} = task.decompose(ctx,0);
+  const { status, plan } = task.decompose(ctx, 0);
 
   assert.equal(status, DecompositionStatus.Partial);
   assert.ok(plan);
   assert.equal(plan.length, 1);
-  assert.equal("Sub-task1", plan.Peek().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
-  assert.equal(ctx.PartialPlanQueue.length,  2);
-  const queueAsArray = ctx.PartialPlanQueue.ToArray();
-  assert.equal(task3, queueAsArray[0].Task);
-  assert.equal(2, queueAsArray[0].TaskIndex);
-  assert.equal(task, queueAsArray[1].Task);
-  assert.equal(1, queueAsArray[1].TaskIndex);
+  assert.equal("Sub-task1", plan[0].Name);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 2);
+  const queueAsArray = ctx.PartialPlanQueue;
+
+  assert.equal(task3, queueAsArray[0].task);
+  assert.equal(2, queueAsArray[0].taskIndex);
+  assert.equal(task, queueAsArray[1].task);
+  assert.equal(1, queueAsArray[1].taskIndex);
 });
 
-        public void ContinueNestedPausePlan_ExpectedBehavior()
-{
+
+test("Continue Nested PausePlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
-  ctx.init()
+
+  ctx.init();
 
   const task = TestUtil.getEmptySequenceTask("Test");
-  const task2 = TestUtil.getEmptySelectorTask("Test2" };
-  const task3 =TestUtil.getEmptySequenceTask("Test3" };
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getEmptySequenceTask("Test3");
+
   task3.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task1"));
   task3.addSubtask(new PausePlanTask());
   task3.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task2"));
@@ -505,34 +517,37 @@ test("PausePlan expected behavior", () => {
   task.addSubtask(task2);
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task4"));
 
-  const {status, plan} = task.decompose(ctx,0);
+  // eslint-disable-next-line prefer-const -- plan is mutable
+  let { status, plan } = task.decompose(ctx, 0);
 
   assert.equal(status, DecompositionStatus.Partial);
   assert.ok(plan);
   assert.equal(plan.length, 1);
   assert.equal("Sub-task1", plan.shift().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
-  assert.equal(ctx.PartialPlanQueue.length,  2);
-  const queueAsArray = ctx.PartialPlanQueue.ToArray();
-  assert.equal(task3, queueAsArray[0].Task);
-  assert.equal(2, queueAsArray[0].TaskIndex);
-  assert.equal(task, queueAsArray[1].Task);
-  assert.equal(1, queueAsArray[1].TaskIndex);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 2);
+  const queueAsArray = ctx.PartialPlanQueue;
+
+  assert.equal(task3, queueAsArray[0].task);
+  assert.equal(2, queueAsArray[0].taskIndex);
+  assert.equal(task, queueAsArray[1].task);
+  assert.equal(1, queueAsArray[1].taskIndex);
 
   ctx.HasPausedPartialPlan = false;
-  plan = new Queue < ITask > ();
+  plan = [];
   while (ctx.PartialPlanQueue.length > 0) {
-    const kvp = ctx.PartialPlanQueue.Dequeue();
-    const s = kvp.Task.Decompose(ctx, kvp.TaskIndex, out const p);
+    const kvp = ctx.PartialPlanQueue.shift();
+    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.taskIndex);
 
-    if (s == DecompositionStatus.Succeeded || s == DecompositionStatus.Partial) {
+    if (s === DecompositionStatus.Succeeded || s === DecompositionStatus.Partial) {
       while (p.length > 0) {
-        plan.Enqueue(p.Dequeue());
+        plan.push(p.shift());
       }
     }
 
-    if (ctx.HasPausedPartialPlan)
+    if (ctx.HasPausedPartialPlan) {
       break;
+    }
   }
 
   assert.ok(plan);
@@ -541,15 +556,16 @@ test("PausePlan expected behavior", () => {
   assert.equal("Sub-task4", plan.shift().Name);
 });
 
-        public void ContinueMultipleNestedPausePlan_ExpectedBehavior()
-{
+test("Continue Multiple Nested PausePlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
-  ctx.init()
+
+  ctx.init();
 
   const task = TestUtil.getEmptySequenceTask("Test");
-  const task2 = TestUtil.getEmptySelectorTask("Test2" };
-  const task3 =TestUtil.getEmptySequenceTask("Test3" };
-  const task4 =TestUtil.getEmptySequenceTask("Test4" };
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getEmptySequenceTask("Test3");
+  const task4 = TestUtil.getEmptySequenceTask("Test4");
+
   task3.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task1"));
   task3.addSubtask(new PausePlanTask());
   task3.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task2"));
@@ -566,34 +582,37 @@ test("PausePlan expected behavior", () => {
   task.addSubtask(task4);
   task.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task7"));
 
-  const {status, plan} = task.decompose(ctx,0);
+  // eslint-disable-next-line prefer-const -- plan is mutable
+  let { status, plan } = task.decompose(ctx, 0);
 
   assert.equal(status, DecompositionStatus.Partial);
   assert.ok(plan);
   assert.equal(plan.length, 1);
   assert.equal("Sub-task1", plan.shift().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
-  assert.equal(ctx.PartialPlanQueue.length,  2);
-  const queueAsArray = ctx.PartialPlanQueue.ToArray();
-  assert.equal(task3, queueAsArray[0].Task);
-  assert.equal(2, queueAsArray[0].TaskIndex);
-  assert.equal(task, queueAsArray[1].Task);
-  assert.equal(1, queueAsArray[1].TaskIndex);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 2);
+  const queueAsArray = ctx.PartialPlanQueue;
+
+  assert.equal(task3, queueAsArray[0].task);
+  assert.equal(2, queueAsArray[0].taskIndex);
+  assert.equal(task, queueAsArray[1].task);
+  assert.equal(1, queueAsArray[1].taskIndex);
 
   ctx.HasPausedPartialPlan = false;
-  plan = new Queue < ITask > ();
+  plan = [];
   while (ctx.PartialPlanQueue.length > 0) {
-    const kvp = ctx.PartialPlanQueue.Dequeue();
-    const s = kvp.Task.Decompose(ctx, kvp.TaskIndex, out const p);
+    const kvp = ctx.PartialPlanQueue.shift();
+    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.TaskIndex);
 
-    if (s == DecompositionStatus.Succeeded || s == DecompositionStatus.Partial) {
+    if (s === DecompositionStatus.Succeeded || s === DecompositionStatus.Partial) {
       while (p.length > 0) {
-        plan.Enqueue(p.Dequeue());
+        plan.push(p.shift());
       }
     }
 
-    if (ctx.HasPausedPartialPlan)
+    if (ctx.HasPausedPartialPlan) {
       break;
+    }
   }
 
   assert.ok(plan);
@@ -603,19 +622,20 @@ test("PausePlan expected behavior", () => {
   assert.equal("Sub-task5", plan.shift().Name);
 
   ctx.HasPausedPartialPlan = false;
-  plan = new Queue < ITask > ();
+  plan = [];
   while (ctx.PartialPlanQueue.length > 0) {
-    const kvp = ctx.PartialPlanQueue.Dequeue();
-    const s = kvp.Task.Decompose(ctx, kvp.TaskIndex, out const p);
+    const kvp = ctx.PartialPlanQueue.shift();
+    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.TaskIndex);
 
-    if (s == DecompositionStatus.Succeeded || s == DecompositionStatus.Partial) {
+    if (s === DecompositionStatus.Succeeded || s === DecompositionStatus.Partial) {
       while (p.length > 0) {
-        plan.Enqueue(p.Dequeue());
+        plan.push(p.shift());
       }
     }
 
-    if (ctx.HasPausedPartialPlan)
+    if (ctx.HasPausedPartialPlan) {
       break;
+    }
   }
 
   assert.ok(plan);
@@ -623,6 +643,6 @@ test("PausePlan expected behavior", () => {
   assert.equal("Sub-task6", plan.shift().Name);
   assert.equal("Sub-task7", plan.shift().Name);
 });
-*/
+
 
 test.run();

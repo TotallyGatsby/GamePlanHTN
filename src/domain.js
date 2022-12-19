@@ -7,6 +7,7 @@ import CompoundTask from "./Tasks/compoundTask.js";
 import PrimitiveTask from "./Tasks/primitiveTask.js";
 import DecompositionStatus from "./decompositionStatus.js";
 import ContextState from "./contextState.js";
+import log from "loglevel";
 
 class Domain {
   // TODO: Handle actions, conditions, and effects via name lookup as separate objects
@@ -52,15 +53,15 @@ class Domain {
       throw new Error("We require the Method Traversal Record to have a valid instance.");
     }
 
+    if (context.LogDecomposition) {
+      log.debug(`Domain.findPlan: Starting planning.`);
+    }
+
     // The context is now in planning
     context.ContextState = ContextState.Planning;
 
     let result = { status: DecompositionStatus.Rejected, plan: [] };
     let plan = [];
-
-    // context.MethodTraversalRecord = [];
-
-    //  result = this.Root.decompose(context, 0);
 
     // We first check whether we have a stored start task. This is true
     // if we had a partial plan pause somewhere in our plan, and we now
@@ -72,17 +73,20 @@ class Domain {
     // continuing the current plan), so that we're open for other plans to replace
     // the running partial plan.
     if (context.HasPausedPartialPlan && context.LastMTR.length === 0) {
+      if (context.LogDecomposition) {
+        log.debug(`Domain.findPlan: Resuming partial plan`);
+      }
       context.HasPausedPartialPlan = false;
       while (context.PartialPlanQueue.length > 0) {
         const kvp = context.PartialPlanQueue.shift();
 
         if (plan.length === 0) {
-          const kvpStatus = kvp.Task.decompose(context, kvp.TaskIndex);
+          const kvpStatus = kvp.task.decompose(context, kvp.taskIndex);
 
           result.status = kvpStatus.status;
           plan = kvpStatus.plan;
         } else {
-          const kvpStatus = kvp.Task.decompose(context, kvp.TaskIndex);
+          const kvpStatus = kvp.task.decompose(context, kvp.taskIndex);
 
           result.status = kvpStatus.status;
           if (kvpStatus.status === DecompositionStatus.Succeeded || kvpStatus.status === DecompositionStatus.Partial) {
@@ -124,7 +128,9 @@ class Domain {
       }
 
       result = this.Root.decompose(context, 0);
-
+      if (context.LogDecomposition) {
+        log.debug(`Domain.findPlan: result from decomposing ${JSON.stringify(result)}`);
+      }
       // If we failed to find a new plan, we have to restore the old plan,
       // if it was a partial plan.
       if (lastPartialPlanQueue?.length > 0 && (

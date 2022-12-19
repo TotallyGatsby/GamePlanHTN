@@ -1,3 +1,4 @@
+/* eslint-disable max-statements -- Some long tests are long */
 // Portions of this file are derived from FluidHTN (MIT License)
 // Copyright (c) 2019 Pål Trefall
 // https://github.com/ptrefall/fluid-hierarchical-task-network
@@ -11,6 +12,7 @@ import DecompositionStatus from "../src/decompositionStatus.js";
 import * as TestUtil from "./utils.js";
 import ContextState from "../src/contextState.js";
 import EffectType from "../src/effectType.js";
+import PausePlanTask from "../src/Tasks/pausePlanTask.js";
 
 log.enableAll();
 
@@ -229,7 +231,7 @@ test("Planning returns null if there are no tasks", () => {
 });
 
 test("MTR Null throws exception", () => {
-  var ctx = TestUtil.getEmptyTestContext();
+  const ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
   ctx.MethodTraversalRecord = null;
@@ -252,7 +254,7 @@ test("Planning leaves context in Executing state", () => {
   assert.equal(ctx.ContextState, ContextState.Executing);
 });
 
-test("FindPlan expected behavior", () => {
+test("findPlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
@@ -272,7 +274,7 @@ test("FindPlan expected behavior", () => {
   assert.equal(planResult.plan[0].Name, "Sub-task");
 });
 
-test("FindPlan trims non permanent state changes", () => {
+test("findPlan trims non permanent state changes", () => {
   const ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
@@ -315,8 +317,7 @@ test("FindPlan trims non permanent state changes", () => {
 });
 
 
-// eslint-disable-next-line max-statements -- Long test is long
-test("FindPlan clears state change when plan is empty", () => {
+test("findPlan clears state change when plan is empty", () => {
   const ctx = TestUtil.getEmptyTestContext();
 
   ctx.init();
@@ -351,5 +352,237 @@ test("FindPlan clears state change when plan is empty", () => {
   assert.equal(status.plan, []);
 });
 
+
+test("findPlan if MTRs are equal then return empty plan", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  ctx.LastMTR.push(1);
+
+  // Root is a Selector that branch off into task1 selector or task2 sequence.
+  // MTR only tracks decomposition of compound tasks, so our MTR is only 1 layer deep here,
+  // Since both compound tasks decompose into primitive tasks.
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySequenceTask("Test1");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getSimplePrimitiveTask("Sub-task1").addCondition((context) => context.Done === true);
+  const task4 = TestUtil.getSimplePrimitiveTask("Sub-task1");
+  const task5 = TestUtil.getSimplePrimitiveTask("Sub-task2").addCondition((context) => context.Done === true);
+
+  domain.add(domain.Root, task1);
+  domain.add(domain.Root, task2);
+  domain.add(task1, task3);
+  domain.add(task2, task4);
+  domain.add(task2, task5);
+  const { status, plan } = domain.findPlan(ctx);
+
+  assert.equal(status, DecompositionStatus.Rejected);
+  assert.equal(plan.length, 0);
+  assert.equal(ctx.MethodTraversalRecord.length, 1);
+  assert.equal(ctx.MethodTraversalRecord[0], ctx.LastMTR[0]);
+});
+
+
+test("Pause Plan expected behavior", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const domain = TestUtil.getEmptyTestDomain();
+  const task = TestUtil.getEmptySequenceTask("Test");
+
+  domain.add(domain.Root, task);
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task1"));
+  domain.add(task, new PausePlanTask());
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task2"));
+
+  const { status, plan } = domain.findPlan(ctx);
+
+  assert.equal(status, DecompositionStatus.Partial);
+  assert.ok(plan);
+  assert.equal(plan.length, 1);
+  assert.equal("Sub-task1", plan[0].Name);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 1);
+  assert.equal(task, ctx.PartialPlanQueue[0].task);
+  assert.equal(2, ctx.PartialPlanQueue[0].taskIndex);
+});
+
+test("Continue Paused Plan expected behavior", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.LogDecomposition = true;
+  ctx.init();
+
+  const domain = TestUtil.getEmptyTestDomain();
+  const task = TestUtil.getEmptySequenceTask("Test");
+
+  domain.add(domain.Root, task);
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task1"));
+  domain.add(task, new PausePlanTask());
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task2"));
+
+  let { status, plan } = domain.findPlan(ctx);
+
+  assert.equal(status, DecompositionStatus.Partial);
+  assert.ok(plan);
+  assert.equal(plan.length, 1);
+  assert.equal("Sub-task1", plan.shift().Name);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 1);
+  assert.equal(task, ctx.PartialPlanQueue[0].task);
+  assert.equal(2, ctx.PartialPlanQueue[0].taskIndex);
+
+  ({ status, plan } = domain.findPlan(ctx));
+
+  assert.equal(status, DecompositionStatus.Succeeded);
+  assert.ok(plan);
+  assert.equal(plan.length, 1);
+  assert.equal("Sub-task2", plan[0].Name);
+});
+
+test("Nested Pause Plan Expected behavior", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+
+  const domain = TestUtil.getEmptyTestDomain();
+  const task = TestUtil.getEmptySequenceTask("Test");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getEmptySequenceTask("Test3");
+
+  domain.add(domain.Root, task);
+  domain.add(task, task2);
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task4"));
+
+  domain.add(task2, task3);
+  domain.add(task2, TestUtil.getSimplePrimitiveTask("Sub-task3"));
+
+  domain.add(task3, TestUtil.getSimplePrimitiveTask("Sub-task1"));
+  domain.add(task3, new PausePlanTask());
+  domain.add(task3, TestUtil.getSimplePrimitiveTask("Sub-task2"));
+
+  const { status, plan } = domain.findPlan(ctx);
+
+  assert.equal(status, DecompositionStatus.Partial);
+  assert.ok(plan);
+  assert.equal(plan.length, 1);
+  assert.equal("Sub-task1", plan[0].Name);
+  assert.equal(ctx.HasPausedPartialPlan, true);
+  assert.equal(ctx.PartialPlanQueue.length, 2);
+  const queueAsArray = ctx.PartialPlanQueue;
+
+  assert.equal(task3, queueAsArray[0].Task);
+  assert.equal(2, queueAsArray[0].TaskIndex);
+  assert.equal(task, queueAsArray[1].Task);
+  assert.equal(1, queueAsArray[1].TaskIndex);
+});
+
+
+test("Continue nested pause plan expected behavior", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const domain = TestUtil.getEmptyTestDomain();
+
+  const task = TestUtil.getEmptySequenceTask("Test");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getEmptySequenceTask("Test3");
+
+  domain.add(domain.Root, task);
+  domain.add(task, task2);
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task4"));
+
+  domain.add(task2, task3);
+  domain.add(task2, TestUtil.getSimplePrimitiveTask("Sub-task3"));
+
+  domain.add(task3, TestUtil.getSimplePrimitiveTask("Sub-task1"));
+  domain.add(task3, new PausePlanTask());
+  domain.add(task3, TestUtil.getSimplePrimitiveTask("Sub-task2"));
+
+  let { status, plan } = domain.findPlan(ctx);
+
+  assert.equal(status, DecompositionStatus.Partial);
+  assert.ok(plan);
+  assert.equal(plan.length, 1);
+  assert.equal("Sub-task1", plan.shift().Name);
+  assert.equal(ctx.HasPausedPartialPlan);
+  assert.equal(ctx.PartialPlanQueue.length, 2);
+  const queueAsArray = ctx.PartialPlanQueue;
+
+  assert.equal(task3, queueAsArray[0].Task);
+  assert.equal(2, queueAsArray[0].TaskIndex);
+  assert.equal(task, queueAsArray[1].Task);
+  assert.equal(1, queueAsArray[1].TaskIndex);
+
+  ({ status, plan } = domain.findPlan(ctx));
+
+  assert.equal(status, DecompositionStatus.Succeeded);
+  assert.ok(plan);
+  assert.equal(plan.length, 2);
+  assert.equal("Sub-task2", plan.shift().Name);
+  assert.equal("Sub-task4", plan.shift().Name);
+});
+
+test("Continue multiple nested pause plan expected behavior", () => {
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const domain = TestUtil.getEmptyTestDomain();
+
+  const task = TestUtil.getEmptySequenceTask("Test");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = TestUtil.getEmptySequenceTask("Test3");
+  const task4 = TestUtil.getEmptySequenceTask("Test4");
+
+  domain.add(domain.Root, task);
+
+  domain.add(task3, TestUtil.getSimplePrimitiveTask("Sub-task1"));
+  domain.add(task3, new PausePlanTask());
+  domain.add(task3, TestUtil.getSimplePrimitiveTask("Sub-task2"));
+
+  domain.add(task2, task3);
+  domain.add(task2, TestUtil.getSimplePrimitiveTask("Sub-task3"));
+
+  domain.add(task4, TestUtil.getSimplePrimitiveTask("Sub-task5"));
+  domain.add(task4, new PausePlanTask());
+  domain.add(task4, TestUtil.getSimplePrimitiveTask("Sub-task6"));
+
+  domain.add(task, task2);
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task4"));
+  domain.add(task, task4);
+  domain.add(task, TestUtil.getSimplePrimitiveTask("Sub-task7"));
+
+  let { status, plan } = domain.findPlan(ctx);
+
+  assert.equal(status, DecompositionStatus.Partial);
+  assert.ok(plan);
+  assert.equal(plan.length, 1);
+  assert.equal("Sub-task1", plan.shift().Name);
+  assert.equal(ctx.HasPausedPartialPlan);
+  assert.equal(ctx.PartialPlanQueue.length, 2);
+  const queueAsArray = ctx.PartialPlanQueue;
+
+  assert.equal(task3, queueAsArray[0].Task);
+  assert.equal(2, queueAsArray[0].TaskIndex);
+  assert.equal(task, queueAsArray[1].Task);
+  assert.equal(1, queueAsArray[1].TaskIndex);
+
+  ({ status, plan } = domain.findPlan(ctx));
+
+  assert.equal(status, DecompositionStatus.Partial);
+  assert.ok(plan);
+  assert.equal(plan.length, 3);
+  assert.equal("Sub-task2", plan.shift().Name);
+  assert.equal("Sub-task4", plan.shift().Name);
+  assert.equal("Sub-task5", plan.shift().Name);
+
+  ({ status, plan } = domain.findPlan(ctx));
+
+  assert.equal(status, DecompositionStatus.Succeeded);
+  assert.ok(plan);
+  assert.equal(plan.length, 2);
+  assert.equal("Sub-task6", plan.shift().Name);
+  assert.equal("Sub-task7", plan.shift().Name);
+});
 
 test.run();
