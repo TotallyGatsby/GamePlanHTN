@@ -15,11 +15,11 @@ class Planner {
 
   // ========================================================= PROPERTIES
 
-  get lastStatus() {
+  get LastStatus() {
     return this._lastStatus;
   }
 
-  set lastStatus(status) {
+  set LastStatus(status) {
     this._lastStatus = status;
   }
 
@@ -123,28 +123,27 @@ class Planner {
 
       ctx.IsDirty = false;
 
-      if (worldStateDirtyReplan) {
+      if (worldStateDirtyReplan && ctx.HasPausedPartialPlan) {
         // If we're simply re-evaluating whether to replace the current plan because
         // some world state got dirt, then we do not intend to continue a partial plan
         // right now, but rather see whether the world state changed to a degree where
         // we should pursue a better plan. Thus, if this replan fails to find a better
         // plan, we have to add back the partial plan temps cached above.
-        if (ctx.HasPausedPartialPlan) {
-          ctx.HasPausedPartialPlan = false;
-          // NOTE: Deviates from FluidHTN, JS uses arrays for queues
-          lastPartialPlanQueue = [];
-          while (ctx.PartialPlanQueue.length > 0) {
-            lastPartialPlanQueue.push(ctx.PartialPlanQueue.shift());
-          }
 
-          // We also need to ensure that the last mtr is up to date with the on-going MTR of the partial plan,
-          // so that any new potential plan that is decomposing from the domain root has to beat the currently
-          // running partial plan.
-          ctx.shiftMTR();
+        ctx.HasPausedPartialPlan = false;
+        // NOTE: Deviates from FluidHTN, JS uses arrays for queues
+        lastPartialPlanQueue = [];
+        while (ctx.PartialPlanQueue.length > 0) {
+          lastPartialPlanQueue.push(ctx.PartialPlanQueue.shift());
+        }
 
-          if (ctx.DebugMTR) {
-            ctx.shiftMTRDebug();
-          }
+        // We also need to ensure that the last mtr is up to date with the on-going MTR of the partial plan,
+        // so that any new potential plan that is decomposing from the domain root has to beat the currently
+        // running partial plan.
+        ctx.shiftMTR();
+
+        if (ctx.DebugMTR) {
+          ctx.shiftMTRDebug();
         }
       }
 
@@ -197,24 +196,52 @@ class Planner {
           }
         }
       }
+    }
 
-      if (this._currentTask === null && this._plan.length > 0) {
-        this._currentTask = this._plan.shift();
-        if (this._currentTask) {
-          if (this.onNewTask) {
-            this.onNewTask(this._currentTask);
+    if (this._currentTask === null && this._plan.length > 0) {
+      this._currentTask = this._plan.shift();
+      if (this._currentTask) {
+        if (this.onNewTask) {
+          this.onNewTask(this._currentTask);
+        }
+
+        // TODO: Double check that we're defining rich enough Conditions so that when we pass them through they are
+        // useful to our onNewTaskConditionFailed event
+        for (let i = 0; i < this._currentTask.Conditions.length; i++) {
+          // If a condition failed, then the plan failed to progress! A replan is required.
+          if (this._currentTask.Conditions[i](ctx) === false) {
+            if (this.onNewTaskConditionFailed) {
+              this.onNewTaskConditionFailed(this._currentTask, this._currentTask.Conditions[i]);
+            }
+            this._currentTask = null;
+            this._plan = [];
+            ctx.clearLastMTR();
+            if (ctx.DebugMTR) {
+              ctx.clearLastMTRDebug();
+            }
+            ctx.HasPausedPartialPlan = false;
+            ctx.clearPartialPlanQueue();
+            ctx.IsDirty = false;
+
+            return;
           }
+        }
+      }
+    }
 
-          // TODO: Double check that we're defining rich enough Conditions so that when we pass them through they are
-          // useful to our onNewTaskConditionFailed event
-          for (let i = 0; i < this._currentTask.Conditions.length; i++) {
+    if (this._currentTask) {
+      if (this._currentTask instanceof PrimitiveTask) {
+        if (this._currentTask.operator) {
+          this._currentTask.ExecutingConditions.forEach((condition) => {
             // If a condition failed, then the plan failed to progress! A replan is required.
-            if (this._currentTask.Conditions[i](ctx) === false) {
-              if (this.onNewTaskConditionFailed) {
-                this.onNewTaskConditionFailed(this._currentTask, this._currentTask.Conditions[i]);
+            if (condition(ctx) === false) {
+              if (this.onCurrentTaskExecutingConditionFailed) {
+                this.onCurrentTaskExecutingConditionFailed(this._currentTask, condition);
               }
+
               this._currentTask = null;
               this._plan = [];
+
               ctx.clearLastMTR();
               if (ctx.DebugMTR) {
                 ctx.clearLastMTRDebug();
@@ -225,103 +252,77 @@ class Planner {
 
               return;
             }
-          }
-        }
-      }
+          });
 
-      if (this._currentTask) {
-        if (this._currentTask instanceof PrimitiveTask) {
-          if (this._currentTask.Operator) {
-            this._currentTask.ExecutingConditions.forEach((condition) => {
-              // If a condition failed, then the plan failed to progress! A replan is required.
-              if (condition(ctx) === false) {
-                if (this.onCurrentTaskExecutingConditionFailed) {
-                  this.onCurrentTaskExecutingConditionFailed(this._currentTask, condition);
+
+          this.LastStatus = this._currentTask.operator(ctx);
+
+          // If the operation finished successfully, we set task to null so that we dequeue the next task in the plan the following tick.
+          if (this.LastStatus === TaskStatus.Success) {
+            if (this.onCurrentTaskCompletedSuccessfully) {
+              this.onCurrentTaskCompletedSuccessfully(this._currentTask);
+            }
+
+            // All effects that is a result of running this task should be applied when the task is a success.
+            this._currentTask.Effects.forEach((effect) => {
+              if (effect.Type === EffectType.PlanAndExecute) {
+                if (this.onApplyEffect) {
+                  this.onApplyEffect(effect);
                 }
-
-                this._currentTask = null;
-                this._plan = [];
-
-                ctx.clearLastMTR();
-                if (ctx.DebugMTR) {
-                  ctx.clearLastMTRDebug();
-                }
-                ctx.HasPausedPartialPlan = false;
-                ctx.clearPartialPlanQueue();
-                ctx.IsDirty = false;
-
-                return;
+                effect.apply(ctx);
               }
             });
 
-            this.lastStatus = this._currentTask.operator(ctx);
-
-            // If the operation finished successfully, we set task to null so that we dequeue the next task in the plan the following tick.
-            if (this.lastStatus === TaskStatus.Success) {
-              if (this.onCurrentTaskCompletedSuccessfully) {
-                this.onCurrentTaskCompletedSuccessfully(this._currentTask);
-              }
-
-              // All effects that is a result of running this task should be applied when the task is a success.
-              this._currentTask.Effects.forEach((effect) => {
-                if (effect.Type === EffectType.PlanAndExecute) {
-                  if (this.onApplyEffect) {
-                    this.onApplyEffect(effect);
-                  }
-                  effect.apply(ctx);
-                }
-              });
-
-              this._currentTask = null;
-              if (this._plan.length === 0) {
-                ctx.clearLastMTR();
-
-                if (ctx.DebugMTR) {
-                  ctx.clearLastMTRDebug();
-                }
-
-                ctx.IsDirty = false;
-
-                if (allowImmediateReplan) {
-                  this.tick(domain, ctx, false);
-                }
-              }
-            } else if (this.lastStatus === TaskStatus.Failure) {
-              // If the operation failed to finish, we need to fail the entire plan, so that we will replan the next tick.
-              if (this.onCurrentTaskFailed) {
-                this.onCurrentTaskFailed(this._currentTask);
-              }
-
-              this._currentTask = null;
-              this._plan = [];
-
+            this._currentTask = null;
+            if (this._plan.length === 0) {
               ctx.clearLastMTR();
+
               if (ctx.DebugMTR) {
                 ctx.clearLastMTRDebug();
               }
 
-              ctx.HasPausedPartialPlan = false;
-              ctx.clearPartialPlanQueue();
               ctx.IsDirty = false;
-            } else if (this.onCurrentTaskContinues) {
-              // Otherwise the operation isn't done yet and need to continue.
-              this.onCurrentTaskContinues(this._currentTask);
-            }
-          } else {
-            // This should not really happen if a domain is set up properly.
-            this._currentTask = null;
-            this.lastStatus = TaskStatus.Failure;
-          }
-        }
 
-        if (this._currentTask === null && this._plan.length === 0 && isTryingToReplacePlan === false &&
-          (decompositionStatus === DecompositionStatus.Failed ||
-            decompositionStatus === DecompositionStatus.Rejected)) {
-          this.lastStatus = TaskStatus.Failure;
+              if (allowImmediateReplan) {
+                this.tick(domain, ctx, false);
+              }
+            }
+          } else if (this.LastStatus === TaskStatus.Failure) {
+            // If the operation failed to finish, we need to fail the entire plan, so that we will replan the next tick.
+            if (this.onCurrentTaskFailed) {
+              this.onCurrentTaskFailed(this._currentTask);
+            }
+
+            this._currentTask = null;
+            this._plan = [];
+
+            ctx.clearLastMTR();
+            if (ctx.DebugMTR) {
+              ctx.clearLastMTRDebug();
+            }
+
+            ctx.HasPausedPartialPlan = false;
+            ctx.clearPartialPlanQueue();
+            ctx.IsDirty = false;
+          } else if (this.onCurrentTaskContinues) {
+            // Otherwise the operation isn't done yet and need to continue.
+            this.onCurrentTaskContinues(this._currentTask);
+          }
+        } else {
+          // This should not really happen if a domain is set up properly.
+          this._currentTask = null;
+          this.LastStatus = TaskStatus.Failure;
         }
+      }
+
+      if (this._currentTask === null && this._plan.length === 0 && isTryingToReplacePlan === false &&
+        (decompositionStatus === DecompositionStatus.Failed ||
+          decompositionStatus === DecompositionStatus.Rejected)) {
+        this.LastStatus = TaskStatus.Failure;
       }
     }
   }
+
 
   reset(ctx) {
     this._plan = [];
