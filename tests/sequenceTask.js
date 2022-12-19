@@ -464,7 +464,6 @@ test("Continue PausePlan expected behavior", () => {
 test("Nested PausePlan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
 
-  ctx.LogDecomposition = true;
   ctx.init();
 
   const task = TestUtil.getEmptySequenceTask("Test");
@@ -600,9 +599,10 @@ test("Continue Multiple Nested PausePlan expected behavior", () => {
 
   ctx.HasPausedPartialPlan = false;
   plan = [];
+
   while (ctx.PartialPlanQueue.length > 0) {
     const kvp = ctx.PartialPlanQueue.shift();
-    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.TaskIndex);
+    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.taskIndex);
 
     if (s === DecompositionStatus.Succeeded || s === DecompositionStatus.Partial) {
       while (p.length > 0) {
@@ -625,7 +625,7 @@ test("Continue Multiple Nested PausePlan expected behavior", () => {
   plan = [];
   while (ctx.PartialPlanQueue.length > 0) {
     const kvp = ctx.PartialPlanQueue.shift();
-    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.TaskIndex);
+    const { status: s, plan: p } = kvp.task.decompose(ctx, kvp.taskIndex);
 
     if (s === DecompositionStatus.Succeeded || s === DecompositionStatus.Partial) {
       while (p.length > 0) {

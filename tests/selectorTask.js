@@ -149,8 +149,6 @@ test("Decompose Compound Subtasks Succeeds expected behavior", () => {
   const task = TestUtil.getEmptySelectorTask("Test");
   const task2 = TestUtil.getEmptySelectorTask("Test2");
 
-  ctx.LogDecomposition = true;
-
   task2.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task1").addCondition((context) => context.Done === true));
   task2.addSubtask(TestUtil.getSimplePrimitiveTask("Sub-task2"));
 

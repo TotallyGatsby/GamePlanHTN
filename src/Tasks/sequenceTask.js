@@ -23,7 +23,9 @@ const isValid = (context, task) => {
 
 // eslint-disable-next-line max-params -- TODO: Fix this
 const onDecomposeCompoundTask = (context, childTask, taskIndex, oldStackDepth, plan, task) => {
-  log.debug(`Decomposing compund task: ${JSON.stringify(plan)}`);
+  if (context.LogDecomposition) {
+    log.debug(`SequenceTask:OnDecomposeCompoundTask:Decomposing compund task: ${JSON.stringify(plan)}`);
+  }
   const childResult = childTask.decompose(context, 0);
 
   // If result is null, that means the entire planning procedure should cancel.
@@ -77,7 +79,10 @@ const onDecomposeTask = (context, childTask, taskIndex, oldStackDepth, plan, tas
   if (childTask instanceof CompoundTask) {
     return onDecomposeCompoundTask(context, childTask, taskIndex, oldStackDepth, plan, task);
   } else if (childTask instanceof PrimitiveTask) {
-    log.debug(`Adding primitive task to plan: ${childTask.Name}`);
+    if (context.LogDecomposition) {
+      log.debug(`Sequence.OnDecomposeTask:Adding primitive task to plan: ${childTask.Name}`);
+    }
+
     childTask.applyEffects(context);
     plan.push(childTask);
   } else if (childTask instanceof PausePlanTask) {

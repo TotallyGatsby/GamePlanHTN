@@ -410,7 +410,6 @@ test("Pause Plan expected behavior", () => {
 test("Continue Paused Plan expected behavior", () => {
   const ctx = TestUtil.getEmptyTestContext();
 
-  ctx.LogDecomposition = true;
   ctx.init();
 
   const domain = TestUtil.getEmptyTestDomain();
@@ -471,10 +470,10 @@ test("Nested Pause Plan Expected behavior", () => {
   assert.equal(ctx.PartialPlanQueue.length, 2);
   const queueAsArray = ctx.PartialPlanQueue;
 
-  assert.equal(task3, queueAsArray[0].Task);
-  assert.equal(2, queueAsArray[0].TaskIndex);
-  assert.equal(task, queueAsArray[1].Task);
-  assert.equal(1, queueAsArray[1].TaskIndex);
+  assert.equal(task3, queueAsArray[0].task);
+  assert.equal(2, queueAsArray[0].taskIndex);
+  assert.equal(task, queueAsArray[1].task);
+  assert.equal(1, queueAsArray[1].taskIndex);
 });
 
 
@@ -505,14 +504,14 @@ test("Continue nested pause plan expected behavior", () => {
   assert.ok(plan);
   assert.equal(plan.length, 1);
   assert.equal("Sub-task1", plan.shift().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
+  assert.ok(ctx.HasPausedPartialPlan);
   assert.equal(ctx.PartialPlanQueue.length, 2);
   const queueAsArray = ctx.PartialPlanQueue;
 
-  assert.equal(task3, queueAsArray[0].Task);
-  assert.equal(2, queueAsArray[0].TaskIndex);
-  assert.equal(task, queueAsArray[1].Task);
-  assert.equal(1, queueAsArray[1].TaskIndex);
+  assert.equal(task3, queueAsArray[0].task);
+  assert.equal(2, queueAsArray[0].taskIndex);
+  assert.equal(task, queueAsArray[1].task);
+  assert.equal(1, queueAsArray[1].taskIndex);
 
   ({ status, plan } = domain.findPlan(ctx));
 
@@ -558,14 +557,14 @@ test("Continue multiple nested pause plan expected behavior", () => {
   assert.ok(plan);
   assert.equal(plan.length, 1);
   assert.equal("Sub-task1", plan.shift().Name);
-  assert.equal(ctx.HasPausedPartialPlan);
+  assert.ok(ctx.HasPausedPartialPlan);
   assert.equal(ctx.PartialPlanQueue.length, 2);
   const queueAsArray = ctx.PartialPlanQueue;
 
-  assert.equal(task3, queueAsArray[0].Task);
-  assert.equal(2, queueAsArray[0].TaskIndex);
-  assert.equal(task, queueAsArray[1].Task);
-  assert.equal(1, queueAsArray[1].TaskIndex);
+  assert.equal(task3, queueAsArray[0].task);
+  assert.equal(2, queueAsArray[0].taskIndex);
+  assert.equal(task, queueAsArray[1].task);
+  assert.equal(1, queueAsArray[1].taskIndex);
 
   ({ status, plan } = domain.findPlan(ctx));
 

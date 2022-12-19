@@ -11,14 +11,14 @@ Please do not use it for production use cases. Many of the unit tests are passin
 ## Features
 * GamePlanHTN is a total-order forward decomposition planner, as described by Troy Humphreys in his [GameAIPro article](http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter12_Exploring_HTN_Planners_through_Example.pdf), a port of [FluidHTN](https://github.com/ptrefall/fluid-hierarchical-task-network).
 * Define Domains via simple JS Object format.
-* Partial planning. [In progress!]
+* Partial planning.
 * Domain splicing. [In progress!]
 * Domain slots for run-time splicing. [In progress!]
 * Replan only when plans complete/fail or when world state changes.
 * Early rejection of replanning that cannot be completed.
 * Extensible
 * Decomposition logging, for debugging.
-* 70 unit tests (and growing!)
+* 81 of 135 FluidHTN unit tests implemented and passing
 
 
 # Library

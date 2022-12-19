@@ -61,7 +61,6 @@ class Domain {
     context.ContextState = ContextState.Planning;
 
     let result = { status: DecompositionStatus.Rejected, plan: [] };
-    let plan = [];
 
     // We first check whether we have a stored start task. This is true
     // if we had a partial plan pause somewhere in our plan, and we now
@@ -74,24 +73,31 @@ class Domain {
     // the running partial plan.
     if (context.HasPausedPartialPlan && context.LastMTR.length === 0) {
       if (context.LogDecomposition) {
-        log.debug(`Domain.findPlan: Resuming partial plan`);
+        log.debug(`Domain.findPlan: Resuming partial plan with length ${context.PartialPlanQueue.length}`);
       }
+
       context.HasPausedPartialPlan = false;
       while (context.PartialPlanQueue.length > 0) {
         const kvp = context.PartialPlanQueue.shift();
 
-        if (plan.length === 0) {
+        if (result.plan.length === 0) {
           const kvpStatus = kvp.task.decompose(context, kvp.taskIndex);
 
           result.status = kvpStatus.status;
-          plan = kvpStatus.plan;
+          result.plan.push(...kvpStatus.plan);
+
+          if (context.LogDecomposition) {
+            log.debug(`Domain.findPlan:Length0:Result - ${JSON.stringify(result)}`);
+          }
         } else {
           const kvpStatus = kvp.task.decompose(context, kvp.taskIndex);
 
+          if (context.LogDecomposition) {
+            log.debug(`Domain.findPlan:Result ${JSON.stringify(kvpStatus)}`);
+          }
           result.status = kvpStatus.status;
           if (kvpStatus.status === DecompositionStatus.Succeeded || kvpStatus.status === DecompositionStatus.Partial) {
-            plan.push(...kvpStatus.plan);
-            result.plan = plan;
+            result.plan.push(...kvpStatus.plan);
           }
         }
 
