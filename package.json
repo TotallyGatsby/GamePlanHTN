@@ -1,13 +1,13 @@
 {
-  "name": "gameplanhtn",
-  "version": "0.0.1",
-  "description": "A simple hierarchical task planner (HTN) for JS.",
+  "name": "gameplan-htn",
+  "version": "1.0.0",
+  "description": "An easy to use hierarchical task planner (HTN) for JS. Based on FluidHTN.",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
     "lint": "eslint . --max-warnings=0",
     "test": "uvu tests",
-    "test:coverage": "c8 --check-coverage --lines 70 --reporter=html --reporter=text uvu",
+    "test:coverage": "c8 --check-coverage --lines 85 --reporter=html --reporter=text uvu",
     "test:report": "c8 report --reporter=text-lcov > coverage/tests.lcov",
     "test:watch": "chokidar \"**/*.js\" -c \"npm test\""
   },
@@ -15,8 +15,15 @@
     "type": "git",
     "url": "git+https://github.com/TotallyGatsby/GamePlanHTN.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "game",
+    "javascript",
+    "ai",
+    "htn",
+    "planning",
+    "game-ai"
+  ],
+  "author": "Phill Spiess",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/TotallyGatsby/GamePlanHTN/issues"

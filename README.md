@@ -5,14 +5,10 @@ A simple but powerful HTN planner in Javascript based on the excellent work of [
 ![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build](https://github.com/TotallyGatsby/GamePlanHTN/actions/workflows/ci.yml/badge.svg)
 
-### THIS LIBRARY IS IN ACTIVE DEVELOPMENT
-Please do not use it for production use cases. Many of the unit tests are passing, but several critical cases are not, and the API for creating and managing objects may change without notice.
-
 ## Features
 * GamePlanHTN is a total-order forward decomposition planner, as described by Troy Humphreys in his [GameAIPro article](http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter12_Exploring_HTN_Planners_through_Example.pdf), a port of [FluidHTN](https://github.com/ptrefall/fluid-hierarchical-task-network).
 * Define Domains via simple JS Object format.
 * Partial planning.
-* Domain splicing. [In progress!]
 * Domain slots for run-time splicing. [In progress!]
 * Replan only when plans complete/fail or when world state changes.
 * Early rejection of replanning that cannot be completed.
