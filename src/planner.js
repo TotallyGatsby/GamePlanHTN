@@ -234,7 +234,7 @@ class Planner {
         if (this._currentTask.operator) {
           this._currentTask.ExecutingConditions.forEach((condition) => {
             // If a condition failed, then the plan failed to progress! A replan is required.
-            if (condition(ctx) === false) {
+            if (!condition.func(ctx)) {
               if (this.onCurrentTaskExecutingConditionFailed) {
                 this.onCurrentTaskExecutingConditionFailed(this._currentTask, condition);
               }
@@ -254,8 +254,7 @@ class Planner {
             }
           });
 
-
-          this.LastStatus = this._currentTask.operator(ctx);
+          this.LastStatus = this._currentTask?.operator(ctx);
 
           // If the operation finished successfully, we set task to null so that we dequeue the next task in the plan the following tick.
           if (this.LastStatus === TaskStatus.Success) {

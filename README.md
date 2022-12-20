@@ -18,7 +18,7 @@ Please do not use it for production use cases. Many of the unit tests are passin
 * Early rejection of replanning that cannot be completed.
 * Extensible
 * Decomposition logging, for debugging.
-* 100 unit tests implemented and passing (and growing!)
+* 106 unit tests implemented and passing, covering all the unit tests from FluidHTN
 
 
 # Library

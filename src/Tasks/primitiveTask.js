@@ -83,6 +83,12 @@ class PrimitiveTask {
     return this;
   }
 
+  addExecutingCondition(condition) {
+    this.ExecutingConditions.push(condition);
+
+    return this;
+  }
+
   addEffect(effect) {
     this.Effects.push(effect);
 

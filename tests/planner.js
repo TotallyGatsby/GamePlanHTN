@@ -4,6 +4,7 @@
 
 import { test } from "uvu";
 import * as assert from "uvu/assert";
+import ContextState from "../src/contextState.js";
 import Effect from "../src/effect.js";
 import EffectType from "../src/effectType.js";
 import Planner from "../src/planner.js";
@@ -274,6 +275,192 @@ test("On New Task Condition Failed expected behavior ", () => {
 
   ctx.Done = false;
   ctx.IsDirty = true;
+  planner.tick(domain, ctx);
+
+  assert.ok(result);
+});
+
+test("On Stop Current Task expected behavior ", () => {
+  let result = false;
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+
+  const planner = new Planner();
+
+  planner.onStopCurrentTask = (t) => {
+    result = t.Name === "Sub-task2";
+  };
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = new PrimitiveTask({ name: "Sub-task1" })
+    .addCondition((context) => context.Done === false);
+  const task4 = new PrimitiveTask({ name: "Sub-task2" });
+
+  task3.setOperator((_context) => TaskStatus.Continue);
+  task4.setOperator((_context) => TaskStatus.Continue);
+  domain.add(domain.Root, task1);
+  domain.add(domain.Root, task2);
+  domain.add(task1, task3);
+  domain.add(task2, task4);
+
+  ctx.Done = true;
+  planner.tick(domain, ctx);
+
+  ctx.Done = false;
+  ctx.IsDirty = true;
+  planner.tick(domain, ctx);
+
+  assert.ok(result);
+});
+
+test("On Current Task Completed Successfully expected behavior ", () => {
+  let result = false;
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const planner = new Planner();
+
+  planner.onCurrentTaskCompletedSuccessfully = (t) => {
+    result = t.Name === "Sub-task1";
+  };
+
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = new PrimitiveTask({ name: "Sub-task1" })
+    .addCondition((context) => context.Done === false);
+  const task4 = new PrimitiveTask({ name: "Sub-task2" });
+
+  task3.setOperator((_context) => TaskStatus.Success);
+  task4.setOperator((_context) => TaskStatus.Continue);
+  domain.add(domain.Root, task1);
+  domain.add(domain.Root, task2);
+  domain.add(task1, task3);
+  domain.add(task2, task4);
+
+  ctx.Done = true;
+  planner.tick(domain, ctx);
+
+  ctx.Done = false;
+  ctx.IsDirty = true;
+  planner.tick(domain, ctx);
+
+  assert.ok(result);
+});
+
+test("On Apply Effec expected behavior ", () => {
+  let result = false;
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const planner = new Planner();
+
+  planner.onApplyEffect = (e) => {
+    result = e.Name === "TestEffect";
+  };
+
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = TestUtil.getEmptySelectorTask("Test2");
+  const task3 = new PrimitiveTask({ name: "Sub-task1" })
+    .addCondition((context) => !context.hasState("HasA"));
+  const task4 = new PrimitiveTask({ name: "Sub-task2" });
+
+  task3.setOperator((_context) => TaskStatus.Success);
+  task3.addEffect(new Effect({
+    name: "TestEffect",
+    type: EffectType.PlanAndExecute,
+    action: (context, type) => context.setState("HasA", 1, true, type),
+  }));
+  task4.setOperator((_context) => TaskStatus.Continue);
+
+  domain.add(domain.Root, task1);
+  domain.add(domain.Root, task2);
+  domain.add(task1, task3);
+  domain.add(task2, task4);
+
+  ctx.ContextState = ContextState.Executing;
+  ctx.setState("HasA", 1, true, EffectType.Permanent);
+  planner.tick(domain, ctx);
+
+  ctx.ContextState = ContextState.Executing;
+  ctx.setState("HasA", 0, true, EffectType.Permanent);
+  planner.tick(domain, ctx);
+
+  assert.ok(result);
+});
+
+
+test("On Current Task Failed expected behavior ", () => {
+  let result = false;
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const planner = new Planner();
+
+  planner.onCurrentTaskFailed = (t) => {
+    result = t.Name === "Sub-task";
+  };
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = new PrimitiveTask({ name: "Sub-task" });
+
+  task2.setOperator((_context) => TaskStatus.Failure);
+  domain.add(domain.Root, task1);
+  domain.add(task1, task2);
+
+  planner.tick(domain, ctx);
+
+  assert.ok(result);
+});
+
+test("On Current Task Continues expected behavior ", () => {
+  let result = false;
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const planner = new Planner();
+
+  planner.onCurrentTaskContinues = (t) => {
+    result = t.Name === "Sub-task";
+  };
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = new PrimitiveTask({ name: "Sub-task" });
+
+  task2.setOperator((_context) => TaskStatus.Continue);
+  domain.add(domain.Root, task1);
+  domain.add(task1, task2);
+
+  planner.tick(domain, ctx);
+
+  assert.ok(result);
+});
+
+test("On Current Task Executing Condition Failed expected behavior ", () => {
+  let result = false;
+  const ctx = TestUtil.getEmptyTestContext();
+
+  ctx.init();
+  const planner = new Planner();
+
+  planner.onCurrentTaskExecutingConditionFailed = (t, c) => {
+    result = t.Name === "Sub-task" && c.Name === "TestCondition";
+  };
+  const domain = TestUtil.getEmptyTestDomain();
+  const task1 = TestUtil.getEmptySelectorTask("Test");
+  const task2 = new PrimitiveTask({ name: "Sub-task" });
+
+  task2.setOperator((_context) => TaskStatus.Continue);
+  task2.addExecutingCondition({
+    Name: "TestCondition",
+    func: (context) => context.Done,
+  });
+  domain.add(domain.Root, task1);
+  domain.add(task1, task2);
+
   planner.tick(domain, ctx);
 
   assert.ok(result);
