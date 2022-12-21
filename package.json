@@ -1,6 +1,6 @@
 {
   "name": "gameplan-htn",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An easy to use hierarchical task planner (HTN) for JS. Based on FluidHTN.",
   "type": "module",
   "source": "src/index.js",
